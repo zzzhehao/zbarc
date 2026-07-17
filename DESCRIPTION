@@ -39,3 +39,5 @@ Imports:
     zhutilsr (>= 0.0.1)
 Additional_repositories:
     http://R-Forge.R-project.org
+Remotes: 
+    zzzhehao/zhutilsr@main
