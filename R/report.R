@@ -44,7 +44,7 @@ render_report <- function(
     zhutilsr::dependency_check("quarto", install.packages("quarto"))
     
     # 1. Locate the .qmd template bundled inside your package
-    template_path <- system.file("template", template_file, package = "zseq")
+    template_path <- system.file("template", template_file, package = "zbarc")
     
     if (template_path == "") {
         stop(sprintf("Template %s not found. Check if the package is installed correctly.", template_file))
@@ -122,7 +122,7 @@ render_report_barcode <- function(
     
     message("Aligning sequence with MAFFT...")
     aligned_fasta <- tempfile(fileext = ".fasta")
-    zseq::mafft(input = fasta, output = aligned_fasta, browse = FALSE, args = mafft_args)
+    zbarc::mafft(input = fasta, output = aligned_fasta, browse = FALSE, args = mafft_args)
     fasta <- aligned_fasta
   }
   
@@ -142,7 +142,7 @@ render_report_barcode <- function(
   # 3. Quarto Rendering Setup
   zhutilsr::dependency_check("quarto", install.packages("quarto"))
   template_file <- "barcode_combined_report.qmd"
-  template_path <- system.file("template", template_file, package = "zseq")
+  template_path <- system.file("template", template_file, package = "zbarc")
   
   if (template_path == "") {
     stop(sprintf("Template %s not found.", template_file))
@@ -159,7 +159,7 @@ render_report_barcode <- function(
   
   # Copy template and ALL partials to temp directory
   # (Assumes your partials are stored in the 'template' folder)
-  file.copy(list.files(system.file("template", package = "zseq"), full.names = TRUE), temp_dir)
+  file.copy(list.files(system.file("template", package = "zbarc"), full.names = TRUE), temp_dir)
   
   message("Rendering Combined Barcode Report. This may take a moment...")
   quarto::quarto_render(

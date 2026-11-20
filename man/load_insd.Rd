@@ -19,9 +19,9 @@ recursively. Default is \code{TRUE}.}
 \value{
 A \code{data.frame} containing parsed INSD fields plus three derived columns:
 \describe{
-\item{\code{zseq.voucher}}{Specimen voucher extracted from \code{source_specimen_voucher} or \code{source_isolate}.}
-\item{\code{zseq.organism_id}}{Specimen identifier derived from \code{source_organism} and \code{zseq.voucher}.}
-\item{\code{zseq.gene}}{Gene/locus label detected from \code{INSDSeq_definition} (\code{cytochrome}, \verb{18S}, \verb{28S}, \verb{16S}, or fallback \code{INSDSeq_definition}).}
+\item{\code{zbarc.voucher}}{Specimen voucher extracted from \code{source_specimen_voucher} or \code{source_isolate}.}
+\item{\code{zbarc.organism_id}}{Specimen identifier derived from \code{source_organism} and \code{zbarc.voucher}.}
+\item{\code{zbarc.gene}}{Gene/locus label detected from \code{INSDSeq_definition} (\code{cytochrome}, \verb{18S}, \verb{28S}, \verb{16S}, or fallback \code{INSDSeq_definition}).}
 }
 }
 \description{
