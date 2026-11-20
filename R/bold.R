@@ -211,15 +211,24 @@ bold_retrieve <- function(
 {
   query_chunks <- .chunk_query_terms(query, max_chars = max_chars)
   n_chunks <- length(query_chunks)
+total_steps <- n_chunks * 4L
 
   dfs <- vector("list", n_chunks)
 
+  cli::cli_progress_bar(
+    total = total_steps,
+    format = "{cli::pb_bar} {cli::pb_percent} | ETA: {cli::pb_eta} | {cli::pb_status}",
+    clear = TRUE
+  )
+  on.exit(cli::cli_progress_done(), add = TRUE)
+
   for (i in seq_along(query_chunks)) {
     q_chunk <- query_chunks[i]
-    prefix <- if (n_chunks > 1) sprintf("[Chunk %d/%d] ", i, n_chunks) else ""
+    chunk_tag <- if (n_chunks > 1) sprintf("[Chunk %d/%d] ", i, n_chunks) else ""
+base_step <- (i - 1L) * 4L
 
     # 1. Validate
-    message(prefix, "1/4: Validating query against BOLD preprocessor...")
+    cli::cli_progress_update(at = base_step + 1L, status = paste0(chunk_tag, "1/4 Validating query..."))
     valid_res <- bold_validate_query(q_chunk)
     valid_query <- valid_res$successful_terms %>%
       purrr::map_chr(~ .x$matched) %>%
@@ -227,26 +236,28 @@ bold_retrieve <- function(
       paste(collapse = ";")
 
     if (!nzchar(valid_query)) {
-      warning(prefix, "No successful terms matched for chunk; skipping.", call. = FALSE)
+cli::cli_alert_      warning("{chunk_tag}No successful terms matched; skipping.")
       next
     }
 
     # 2. Get Token
-    message(prefix, "2/4: Invoking query to get token...")
+    cli::cli_progress_update(at = base_step + 2L, status = paste0(chunk_tag, "2/4 Requesting token..."))
     token <- bold_get_token(valid_query, extent = extent)
 
     # 3. Download
-    message(prefix, "3/4: Downloading batch records (max 1 million)...")
+    cli::cli_progress_update(at = base_step + 3L, status = paste0(chunk_tag, "3/4 Downloading records..."))
     raw_text <- bold_download(token, format = format)
 
     # 4. Read into R
-    message(prefix, "4/4: Parsing data into R...")
+    cli::cli_progress_update(at = base_step + 4L, status = paste0(chunk_tag, "4/4 Parsing data..."))
     dfs[[i]] <- bold_read_data(raw_text, format = format)
   }
 
+  cli::cli_progress_done()
+
   dfs <- purrr::compact(dfs)
   if (length(dfs) == 0) {
-    message("No records retrieved across all query chunks.")
+    cli::cli_alert_info("No records retrieved across all query chunks.")
     return(NULL)
   }
 
@@ -260,7 +271,7 @@ bold_retrieve <- function(
   # 5. Write to disk if a directory or file is provided
   if (!is.null(output_dir) || !is.null(output_file)) {
     bold_write_data(bold_df, dir = output_dir, file = output_file, format = format)
-    message("File saved successfully.")
+    cli::cli_alert_success("File saved successfully.")
   }
 
   return(bold_df)
