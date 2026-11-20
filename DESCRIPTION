@@ -1,11 +1,6 @@
-<<<<<<< HEAD
 Package: zbarc
 Title: Zhehao's Tools for DNA Barcoding and Downstream Analyses
-=======
-Package: zseq
-Title: Zhehao's Tools for Sequence Handling and Analysis
->>>>>>> 0708a86 (Merge pull request #1 from zzzhehao/dev)
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: 
     person("Zhehao", "Hu", , "hu_zhehao@hotmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0006-2408-1513"))
