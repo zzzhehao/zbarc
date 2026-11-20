@@ -120,9 +120,9 @@
 #'
 #' @return A `data.frame` containing parsed INSD fields plus three derived columns:
 #' \describe{
-#'   \item{`zseq.voucher`}{Specimen voucher extracted from `source_specimen_voucher` or `source_isolate`.}
-#'   \item{`zseq.organism_id`}{Specimen identifier derived from `source_organism` and `zseq.voucher`.}
-#'   \item{`zseq.gene`}{Gene/locus label detected from `INSDSeq_definition` (`cytochrome`, `18S`, `28S`, `16S`, or fallback `INSDSeq_definition`).}
+#'   \item{`zbarc.voucher`}{Specimen voucher extracted from `source_specimen_voucher` or `source_isolate`.}
+#'   \item{`zbarc.organism_id`}{Specimen identifier derived from `source_organism` and `zbarc.voucher`.}
+#'   \item{`zbarc.gene`}{Gene/locus label detected from `INSDSeq_definition` (`cytochrome`, `18S`, `28S`, `16S`, or fallback `INSDSeq_definition`).}
 #' }
 #' @family insd
 #' @export
@@ -157,24 +157,24 @@ load_insd <- function(
             dplyr::bind_rows(metadata.seq) %>%
             dplyr::mutate(
                 source_specimen_voucher = dplyr::na_if(source_specimen_voucher, "NA"),
-                zseq.voucher = dplyr::coalesce(
+                zbarc.voucher = dplyr::coalesce(
                     source_specimen_voucher,
                     source_isolate
                 ),
-                zseq.organism_id = dplyr::case_when(
-                    is.na(zseq.voucher) ~ source_organism, # prevent literal NA for those don't have any specimen zseq.voucher info, overides next case, which includes NA cases
+                zbarc.organism_id = dplyr::case_when(
+                    is.na(zbarc.voucher) ~ source_organism, # prevent literal NA for those don't have any specimen zbarc.voucher info, overides next case, which includes NA cases
                     stringr::str_detect(
                         source_organism,
-                        paste0("\\b", zseq.voucher, "\\b"),
+                        paste0("\\b", zbarc.voucher, "\\b"),
                         T
-                    ) ~ paste(source_organism, zseq.voucher),
+                    ) ~ paste(source_organism, zbarc.voucher),
                     .default = source_organism
                 )
             ) %>%
             dplyr::select(c(
                 "INSDSeq_primary-accession",
-                "zseq.voucher",
-                "zseq.organism_id"
+                "zbarc.voucher",
+                "zbarc.organism_id"
             ))
         dplyr::left_join(metadata.seq, labels, by = "INSDSeq_primary-accession")
     }
@@ -182,7 +182,7 @@ load_insd <- function(
     extract_gene <- function(metadata.seq) {
         gene_ex <- metadata.seq %>%
             dplyr::mutate(
-                zseq.gene = dplyr::case_when(
+                zbarc.gene = dplyr::case_when(
                     stringr::str_detect(INSDSeq_definition, "\\bcytochrome\\b") ~ "cytochrome",
                     stringr::str_detect(INSDSeq_definition, "\\b18S\\b") ~ "18S",
                     stringr::str_detect(INSDSeq_definition, "\\b28S\\b") ~ "28S",
@@ -190,7 +190,7 @@ load_insd <- function(
                     .default = INSDSeq_definition
                 )
             ) %>%
-            dplyr::select(c("INSDSeq_primary-accession", "zseq.gene"))
+            dplyr::select(c("INSDSeq_primary-accession", "zbarc.gene"))
         dplyr::left_join(metadata.seq, gene_ex, by = "INSDSeq_primary-accession")
     }
 

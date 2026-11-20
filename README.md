@@ -1,13 +1,13 @@
-# zseq
+# zbarc
 
-`zseq` is an R package for DNA barcoding, sequence alignment, species delimitation, phylogenetics, tree/heatmap visualization, metadata mapping, and Quarto report generation.
+`zbarc` is an R package for DNA barcoding, sequence alignment, species delimitation, phylogenetics, tree/heatmap visualization, metadata mapping, and Quarto report generation.
 
 ## Getting Started
 
 The function is currently only available on GitHub. 
 
 ```r
-devtools::install_github("git@github.com:zzzhehao/zseq.git")
+devtools::install_github("git@github.com:zzzhehao/zbarc.git")
 ```
 
 ## Overview of Capabilities

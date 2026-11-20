@@ -1,4 +1,4 @@
-url: https://zzzhehao.github.io/zseq/
+url: https://zzzhehao.github.io/zbarc/
 template:
   bootstrap: 5
 
@@ -24,7 +24,6 @@ reference:
   - title: Sequence Assembly, Alignment & Trimming
     desc: Wrappers and utilities for Sanger reads, MAFFT, Gblocks, and alignment editing.
     contents:
-      - assemble_map_reference
       - mafft
       - gblocks
       - polish_alignment
