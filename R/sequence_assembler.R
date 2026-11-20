@@ -1,18 +1,22 @@
-#' Assemble contigs by mapping sanger sequencing reads to a reference sequence
+#' Assemble Contigs by Mapping Sanger Sequencing Reads to a Reference Sequence
 #' 
 #' @description
 #' `r lifecycle::badge("deprecated")`
-#' This function is deprecated in version 0.0.1.9001 and will be removed in a future update. 
+#' This function is deprecated in version `0.0.1.9001` and will be removed in a future update.
 #' 
-#' Assemble a set of sanger sequencing reads (ab1) by mapping them against a reference sequence. 
+#' Assembles Sanger sequencing reads (`.ab1`) by quality-trimming, primer-trimming, aligning
+#' against a reference sequence, and building consensus contigs.
 #' 
 #' @details
-#' AB1 reads are read by [sangeranalyseR::SangerRead()] with trimming options specified by \code{trim_args}. Primer sequences are removed by matching primer information with ab1 reads and trimming with [Biostrings::trimLRPatterns()]. Cleaned reads are aligned against reference one-by-one using [DECIPHER::AlignSeqs()]. The alignment is optimized with [DECIPHER::AdjustAlignment()] and the contig is produced by [DECIPHER::ConsensusSequence()].
+#' AB1 reads are inspected with [sangeranalyseR::SangerRead()] and cropped from raw traces
+#' read via `sangerseqR`. Primer sequences are trimmed using [Biostrings::trimLRPatterns()],
+#' aligned with [DECIPHER::AlignSeqs()], refined with [DECIPHER::AdjustAlignment()], and
+#' summarized into consensus sequences with [DECIPHER::ConsensusSequence()].
 #' 
-#' 
-#' @param source_folder Path to the folder containing ab1 files of the reads.
-#' @param contig_name_regex A regex pattern to find ab1 files to be assembled.
-#' @param primers Path to the YAML file, or a \code{data.frame} containing the primer information. The YAML file is structured as follows: 
+#' @param source_folder Character. Path to the folder containing `.ab1` read files.
+#' @param contig_name_regex Character. Regular expression used to extract contig names from `.ab1` filenames.
+#' @param primers Character or `data.frame`. Path to a YAML file or a `data.frame` containing primer
+#'   metadata. A YAML file should be structured as:
 #' \preformatted{
 #' primers:
 #'   - name: 18A1mod
@@ -21,25 +25,27 @@
 #'     spec: forward_start
 #'   ...
 #' }
-#' The four shown properties are required as column if \code{data.frame} is provided. The primers are listed following the order of forward first to forward last, reverse first to reverse last. \code{name} should match the primer names in the ab1 files, \code{direction} decides whether a read will be reverse-complement before mapping, \code{sequence} will be removed from reads, and \code{spec} is a special field with pre-defined keywords: 
+#'   If a `data.frame` is supplied, it must contain columns `name`, `direction`, `sequence`, and `spec`.
+#'   Allowed `spec` values include:
 #'   \describe{
-#'     \item{forward_start}{The first primer of the forward strand}
-#'     \item{forward_end}{The last primer of the forward strand}
-#'     \item{reverse_start}{The first primer of the reverse strand}
-#'     \item{reverse_end}{The last primer of the reverse strand}
+#'     \item{`forward_start`}{First primer of the forward strand.}
+#'     \item{`forward_end`}{Last primer of the forward strand.}
+#'     \item{`reverse_start`}{First primer of the reverse strand.}
+#'     \item{`reverse_end`}{Last primer of the reverse strand.}
 #'   }
-#' @param reference A \code{Biostrings::DNAStringSet} class containing the reference sequence, a path to a fasta file containing one sequence, or a NCBI GenBank accession number.
-#' @param output Path to the output folder
-#' @param run_name Character. Run name to be assigned to output files. 
-#' @param trim_args Named list. Arguments to be passed to [sangeranalyseR::SangerRead()].
-#' @param AlignSeqs_args Named list. Arguments to be passed to [DECIPHER::AlignSeqs()].
-#' @param AdjustAlignment_args Named list. Arguments to be passed to [DECIPHER::AdjustAlignment()].
-#' @param ConsensusSequence_args Named list. Arguments to be passed to [DECIPHER::ConsensusSequence()].
-#' @param browse Logical. Whether to open browser showing the alignments. Default to \code{FALSE}
-#' @param no_file Logical. Whether to write assembled contigs into a fasta file. Default to \code{TRUE}
+#' @param reference A `Biostrings::DNAStringSet` of length 1, a path to a single-sequence FASTA file,
+#'   or a single NCBI GenBank accession number.
+#' @param output Character. Path to the output directory.
+#' @param run_name Character or `NULL`. Base name assigned to the output FASTA file.
+#' @param trim_args Named list. Additional trimming arguments (currently passed to wrapper). Default is `list()`.
+#' @param AlignSeqs_args Named list. Additional alignment arguments. Default is `list()`.
+#' @param AdjustAlignment_args Named list. Additional alignment adjustment arguments. Default is `list()`.
+#' @param ConsensusSequence_args Named list. Additional consensus arguments. Default is `list()`.
+#' @param output_file Logical. Whether to write output files. Default is `TRUE`.
+#' @param browse Logical. Whether to open interactive alignment/contig views in a browser via
+#'   [DECIPHER::BrowseSeqs()]. Default is `FALSE`.
 #' 
-#' @return Assembled contigs in DNAStringSet class. 
-#' 
+#' @return Assembled contigs as a `Biostrings::DNAStringSet` object (when reaching return).
 #' @export
 assemble_map_reference <- function(
     source_folder,
@@ -120,7 +126,15 @@ assemble_map_reference <- function(
     cli::cli_alert_success("Contigs are written at `{output_file}`.")
 }
 
-
+#' Internal Worker to Assemble a Single Contig from AB1 Reads
+#'
+#' @param ab1_paths Character vector of `.ab1` file paths belonging to one contig.
+#' @param primers A `data.frame` of primer metadata (`name`, `direction`, `sequence`, `spec`).
+#' @param reference A `Biostrings::DNAStringSet` containing the reference sequence.
+#' @param browse Logical. Whether to display intermediate alignments/contigs via [DECIPHER::BrowseSeqs()].
+#'
+#' @return A `Biostrings::DNAStringSet` containing the consensus contig.
+#' @noRd
 .assemble_map_reference <- function(
     ab1_paths,
     primers,
