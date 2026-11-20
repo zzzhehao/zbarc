@@ -46,7 +46,11 @@ Remotes:
     zzzhehao/zhutilsr@dev
 Config/roxygen2/version: 8.1.1.9000
 <<<<<<< HEAD
+<<<<<<< HEAD
 URL: https://zzzhehao.github.io/zbarc/
+=======
+URL: https://zzzhehao.github.io/zseq/
+>>>>>>> 0708a86 (Merge pull request #1 from zzzhehao/dev)
 =======
 URL: https://zzzhehao.github.io/zseq/
 >>>>>>> 0708a86 (Merge pull request #1 from zzzhehao/dev)

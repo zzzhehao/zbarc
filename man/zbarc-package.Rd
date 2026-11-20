@@ -22,6 +22,13 @@ Useful links:
 }
 
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://zzzhehao.github.io/zseq/}
+}
+
+}
 \author{
 \strong{Maintainer}: Zhehao Hu \email{hu_zhehao@hotmail.com} (\href{https://orcid.org/0009-0006-2408-1513}{ORCID})
 
