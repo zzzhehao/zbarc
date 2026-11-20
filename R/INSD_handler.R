@@ -1,9 +1,9 @@
-#' Extract INSD Metadata from `xml` File Downloaded From NCBI Genebank
+#' Extract INSD Metadata from an XML File Downloaded from NCBI GenBank
 #'
-#' @param xml File path to `xml` file
-#' @return A data.frame of flattened tabular metadata.
+#' @param xml Character. File path to an INSD XML file.
+#'
+#' @return A `data.frame` of flattened sequence, feature qualifier, and reference metadata.
 #' @export
-#' 
 .read_insd <- function(xml) {
     suppressMessages({
         ncbi.xml <- xml2::read_xml(xml)
@@ -108,18 +108,21 @@
     return(INSDMetadata)
 }
 
-
-#' Load Sequences from NCBI GenBank with Metadata from INSD XML Files. 
+#' Load Sequences from NCBI GenBank with Metadata from INSD XML Files
 #'
-#' @param path Character vector. Path to a folder or to `xml` files. If folder path is provided, `xml` files matching \code{regex} filter will be loaded.
-#' @param recursive Logical. If \code{path} is directory, whether to find XML files recursively.
-#' @param regex Character vector. Regex expression to match `xml` files to be loaded. 
-#' @return A data.frame. Alongside fields from INSD, three `zseq` columns are generated: \describe{
-#'   \item{`zseq.voucher`}{Specimen voucher, extracted from `source_specimen_voucher` or `source_isolate`}
-#'   \item{`zseq.organism_id`}{Specimen ID, extracted from `source_organism` or inherited from `zseq.voucher`}
-#'   \item{`zseq.gene`}{Locus, only detecting `cytochrome`, `18S`, `28S`, or `16S`.}
+#' @param path Character vector. Path to a directory or to XML files. If a directory path is
+#'   provided, matching XML files are loaded.
+#' @param recursive Logical. When `path` is a directory, whether to search for XML files
+#'   recursively. Default is `TRUE`.
+#' @param regex Character or `NULL`. Optional regular expression passed to `pattern` in
+#'   [list.files()] when `path` is a directory.
+#'
+#' @return A `data.frame` containing parsed INSD fields plus three derived columns:
+#' \describe{
+#'   \item{`zseq.voucher`}{Specimen voucher extracted from `source_specimen_voucher` or `source_isolate`.}
+#'   \item{`zseq.organism_id`}{Specimen identifier derived from `source_organism` and `zseq.voucher`.}
+#'   \item{`zseq.gene`}{Gene/locus label detected from `INSDSeq_definition` (`cytochrome`, `18S`, `28S`, `16S`, or fallback `INSDSeq_definition`).}
 #' }
-#' 
 #' @export
 load_insd <- function(
     path,
