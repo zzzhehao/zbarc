@@ -1,22 +1,23 @@
-#' Helper Functions to Generate MrBayes Blocks in NEXUS Files
+#' @title Helper Functions to Generate MrBayes Block in Nexus
 #' 
 #' @name mrbayes
 #' 
 #' @description
-#' Generates MrBayes command strings for inclusion in a NEXUS `MrBayes` block.
-#' `mrbayes_mcmc_cmd()`, `mrbayes_partition_cmd()`, `mrbayes_lset_cmd()`, `mrbayes_prset_cmd()`,
-#' and `mrbayes_sum_cmd()` construct individual commands, while `mrbayes_block()` wraps them in a
-#' `BEGIN MrBayes; ... END;` block. See also [prepare_mrbayes_nexus()] for an end-to-end wrapper.
+#' These functions help generate MrBayes command to put in nexus block that can be written with the alignment together. \code{mrbayes_mcmc_cmd}, \code{mrbayes_partition_cmd}, \code{mrbayes_lset_cmd}, \code{mrbayes_prset_cmd}, \code{mrbayes_sum_cmd} produce individual part of the command. Their output can be passed into \code{mrbayes_block} to package them as a complete nexus block. Also see [prepare_mrbayes_nexus()] for a more powerful wrapper.
 #' 
-#' @return A character string containing formatted MrBayes command(s).
+#' @return A character string. 
 #' @seealso [prepare_mrbayes_nexus()]
 NULL
 
 #' @rdname mrbayes
-#' @param gen Numeric or integer. Number of MCMC generations (`ngen`). Default is `10000000`.
-#' @param nchains Integer. Number of MCMC chains. Default is `4`.
-#' @param nruns Integer. Number of parallel runs. Default is `4`.
-#' @param stopval Numeric. Convergence threshold (`stopval`) when `stoprule = "yes"`. Default is `0.01`.
+#' @title Generate MCMC command for MrBayes Block. 
+#' 
+#' @param gen Number of MCMC generations
+#' @param nchains Number of MCMC chains
+#' @param nruns Number of parallel runs
+#' @param stopval Threshold value to stop the run
+#' 
+#' 
 #' @export
 mrbayes_mcmc_cmd <- function(
     gen = 10000000,
@@ -51,10 +52,9 @@ mrbayes_mcmc_cmd <- function(
 
 #' @rdname mrbayes
 #' @export
-#' @param loci_length Numeric vector. Length of each locus.
-#' @param loci_name Character vector. Name of each locus.
-#' @param protein_coding_loci Character vector. Names of protein-coding loci to partition further by
-#'   codon position (`_pos1`, `_pos2`, `_pos3`).
+#' @param loci_length A numeric vector. Length of each locus.
+#' @param loci_name A character vector. Name of each locus.
+#' @param protein_coding_loci A character vector of the names of the protein coding locus. The locus will be partitioned further based on codon position to allow different substitution rate at each position.
 mrbayes_partition_cmd <- function(
     loci_length,
     loci_name,
@@ -111,10 +111,9 @@ mrbayes_partition_cmd <- function(
 
 #' @rdname mrbayes
 #' @export
-#' @param nst Numeric or integer. Value passed to `lset nst`.
-#' @param rates Character. Value passed to `lset rates`.
-#' @param applyto Numeric vector or `NULL`. Partition indices to apply `lset` settings to.
-#'   Default is `NULL` (applies to the whole alignment).
+#' @param nst Value passed to \code{lset nst}
+#' @param rates Value passed to \code{lset rates}
+#' @param applyto A numeric vector, indicating the index of the partition to apply the \code{lset} settings to. Default to \code{NULL}, which applies to the whole alignment.
 mrbayes_lset_cmd <- function(
     nst,
     rates,
@@ -163,7 +162,7 @@ mrbayes_prset_cmd <- function(
 
 #' @rdname mrbayes
 #' @export
-#' @param cmd Character. Either `"sump"` or `"sumt"` when `...` arguments are supplied.
+#' @param cmd Either \code{"sump"} or \code{"sumt"}, indicating the generating command. Will be ignored when \code{...} is missing.
 mrbayes_sum_cmd <- function(
     ...,
     cmd
@@ -196,38 +195,35 @@ mrbayes_block <- function(
 #' @name mrbayes-args
 #' @rdname mrbayes
 #' @param ... Additional arguments. \describe{
-#'   \item{[mrbayes_mcmc_cmd()]}{Further parameters to include in the `mcmc` command.}
-#'   \item{[mrbayes_lset_cmd()]}{Further parameters to include in the `lset` command.}
-#'   \item{[mrbayes_prset_cmd()]}{Further parameters to include in the `prset` command.}
-#'   \item{[mrbayes_sum_cmd()]}{Further parameters to include in `sumt` or `sump`; `cmd` must also be provided to specify `"sumt"` or `"sump"`.}
-#'   \item{[mrbayes_block()]}{Commands to include inside the `MrBayes` block.}
+#'   \item{[mrbayes_mcmc_cmd]}{Further parameters to put in mcmc command}
+#'   \item{[mrbayes_lset_cmd]}{Further parameters to put in lset command}
+#'   \item{[mrbayes_prset_cmd]}{Further parameters to put in prset command}
+#'   \item{[mrbayes_sum_cmd]}{Further parameters to put in sumt or sump command, when given, \code{cmd} must also be provided to specify whether sumt or sump is being generated}
+#'   \item{[mrbayes_block]}{Commands to be included in the MrBayes block}
 #' }
 NULL
 
-#' Generate a NEXUS File with an Embedded MrBayes Block
+#' Helper-Wrapper for Generating Nexus File for MrBayes
 #' 
 #' @description
-#' Sanitizes sequence labels, writes a `DNAbin` alignment to a NEXUS file, appends a generated
-#' `MrBayes` block, and returns the output file path.
+#' Takes arguments for MrBayes helper construct nexus file with mrbayes block, and export. 
 #' 
 #' @seealso [mrbayes]
+#' 
 #' @export
 #' 
-#' @param alignment A `DNAbin` alignment object.
-#' @param output_path Character. Output file path (with or without a `.nexus` extension).
-#' @param mcmc_options Named list or `NULL`. Arguments passed to [mrbayes_mcmc_cmd()]. Default is `NULL`.
-#' @param partition Logical. Whether to include a partition scheme generated by [mrbayes_partition_cmd()].
-#'   Default is `TRUE`.
-#' @param loci_length Numeric vector. Length of each locus, passed to [mrbayes_partition_cmd()].
-#' @param loci_name Character vector. Name of each locus, passed to [mrbayes_partition_cmd()].
-#' @param protein_coding_loci Character vector. Names of protein-coding loci, passed to [mrbayes_partition_cmd()].
-#' @param lset_options Named list or list of named lists. Arguments passed to [mrbayes_lset_cmd()].
-#' @param prset_options Named list, list of named lists, or `NULL`. Arguments passed to [mrbayes_prset_cmd()].
-#'   Default is `NULL`.
-#' @param sum_options Named list, list of named lists, or `NULL`. Arguments passed to [mrbayes_sum_cmd()].
-#'   Default is `NULL`.
+#' @param alignment Alignment in DNAbin
+#' @param output_path Path of the output nexus file
+#' @param mcmc_options A named list of arguments to be passed to [mrbayes_mcmc_cmd()]
+#' @param partition logical. If a partition is to be applied to alignment. 
+#' @param loci_length A numeric vector. Length of each locus. Will be passed to [mrbayes_partition_cmd()]
+#' @param loci_name A character vector. Name of each locus. Will be passed to [mrbayes_partition_cmd()]
+#' @param protein_coding_loci A character vector of the names of the protein coding locus. The locus will be partitioned further based on codon position to allow different substitution rate at each position. Will be passed to [mrbayes_partition_cmd()]
+#' @param lset_options A named list of arguments to be passed to [mrbayes_lset_cmd()]
+#' @param prset_option A named list of arguments to be passed to [mrbayes_prset_cmd()]
+#' @param sum_options A named list of arguments to be passed to [mrbayes_prset_cmd()]
 #' 
-#' @return Character path to the written NEXUS file.
+#' @return The file path of written nexus file. 
 prepare_mrbayes_nexus <- function(
     alignment,
     output_path,
@@ -300,3 +296,4 @@ prepare_mrbayes_nexus <- function(
 
     return(file_output_path)
 }
+

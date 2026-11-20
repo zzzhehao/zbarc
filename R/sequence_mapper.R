@@ -1,17 +1,10 @@
-#' Create a Wide Sequence Map Linking Sequences to Specimens Across Genes
+
+#' Create a Summary Table Mapping Sequence Label/Accession Number with Vouchered Animals.
 #'
 #' @description
-#' Reshapes sequence metadata into a wide table linking sequences from the same vouchered
-#' specimen across loci, which can be used as `sequence.map` in [concatenate_alignment()][cite: 9, 12].
+#' This will summarize the sequence labels in the way that the sequnces originated from the same vouchered animals could be linked together, which is essential for concatenate multilocus alignment.
 #'
-#' @param metadata.sequence A `data.frame` containing sequence-level metadata.
-#' @param col_gene Unquoted column name in `metadata.sequence` identifying the gene/locus.
-#' @param col_id_specimen Unquoted column name in `metadata.sequence` identifying the specimen.
-#' @param col_id_sequence Unquoted column name in `metadata.sequence` identifying the sequence or
-#'   accession ID.
-#'
-#' @return A wide `data.frame` with a `specimen` column (from `col_id_specimen`) and one column
-#'   per locus (`gene_<col_gene>`) populated with values from `col_id_sequence`.
+#' @return data.frame, basically a wide table of imported metadata data.frame, with every specimen (identified by \code{col_id_specimen}) as a row and every gene (identified by \code{col_gene}) as a column. Values are filled with \code{col_id_sequence}.
 #' @export
 generate_sequence_map <- function(
     metadata.sequence,
@@ -32,3 +25,85 @@ generate_sequence_map <- function(
     return(sequence.map)
 }
 
+
+#' Generate Sequence Metadata LUT
+#' 
+#' @export
+generate_sequence_LUT <- function() {
+    specmeta <- zhutilsr::db_pull("metadata.Specimen.Haploniscidae")
+    sequence.map <- zhutilsr::db_pull("sequence.map", F, T)
+    stmeta <- zhutilsr::db_pull("metadata.Station")
+
+    # Construct c_organims_id and c_organism_label to match with sequence.map
+    # specmeta.label <- specmeta %>%
+    #     dplyr::select(c("DZMB2HH", "voucher", "gensp_morpho_ZH")) %>%
+    #     dplyr::filter(!is.na(voucher)) %>%
+    #     dplyr::mutate(
+    #         c_organism_id = paste0("ZHH", stringr::str_pad(as.character(voucher), 3, "left", "0")),
+    #         c_organism_label = paste(gensp_morpho_ZH, DZMB2HH, voucher, sep = "_"),
+    #         .keep = "none")
+
+    # match sequence.map
+    sequence.map.LUT <- sequence.map %>%
+        # rows_update(specmeta.label, by = "c_organism_id") %>%
+        # pivot longer
+        tidyr::pivot_longer(
+            tidyselect::starts_with("c_gene_"),
+            names_to = "gene",
+            values_to = "identifier"
+        ) %>%
+        # choose desired columns
+        dplyr::select(c("identifier", "c_organism_id", "c_organism_label"))
+
+    # Extract IDivA subset
+    sequence.map.LUT.IDivA <- sequence.map.LUT %>%
+        dplyr::filter(stringr::str_detect(identifier, "[0-9]{3}_.{3}$"))
+
+    # add locality label to ZHH seq
+    sequence.map.LUT.IDivA_ZH <- sequence.map.LUT.IDivA %>%
+        dplyr::filter(stringr::str_detect(c_organism_id, "^ZHH")) %>%
+        dplyr::mutate(
+            # identifier = paste0("ZHH", identifier),
+            voucher = c_organism_id %>% gsub("ZHH", "", .) %>% as.numeric()
+        ) %>%
+        dplyr::left_join(
+            specmeta %>% dplyr::select(c("voucher", "station")),
+            by = "voucher"
+        ) %>%
+        dplyr::left_join(
+            stmeta %>% dplyr::select(c("station", "loc_abbr")),
+            by = "station"
+        ) %>%
+        dplyr::mutate(
+            c_organism_label = paste(c_organism_label, loc_abbr, sep = "_")
+        ) %>%
+        dplyr::select(-c("voucher", "station", "loc_abbr"))
+
+    # multiplies IDivA subset for two voucher prefixes
+    sequence.map.LUT.merged <- list(
+        sequence.map.LUT %>%
+            dplyr::filter(stringr::str_detect(identifier, "^[A-Z]{3}[0-9]{3}_.{3}$", T)),
+        # sequence.map.LUT.IDivA %>% dplyr::mutate(identifier = paste0("VPS", identifier)),
+        sequence.map.LUT.IDivA %>% dplyr::filter(stringr::str_detect(c_organism_id, "^VPS")),
+        sequence.map.LUT.IDivA_ZH
+    ) %>%
+        purrr::reduce(dplyr::bind_rows)
+    # dplyr::filter(!is.na(identifier)) %>%
+    # dplyr::mutate(c_organism_label = dplyr::case_when(stringr::str_detect(identifier, "^[A-Z]{3}[0-9]{3}_") ~ paste(c_organism_label, gsub("_.{3}$", "", identifier), sep = "_"), .default = c_organism_label))
+    return(sequence.map.LUT.merged)
+}
+
+
+generate_orglab_LUT <- function(tip.taxa) {
+    seqmap <- zhutilsr::db_pull("sequence.map")
+    seqmap <- seqmap %>%
+        dplyr::mutate(c_organism_label = as.numeric(c_organism_label)) %>%
+        dplyr::filter(!is.na(c_organism_label)) %>%
+        dplyr::select(c_organism_label, c_organism_id)
+    seqmap %>%
+        dplyr::filter(
+            c_organism_label %in%
+                tip.taxa &
+                is.na(as.numeric(seqmap$c_organism_id))
+        )
+}

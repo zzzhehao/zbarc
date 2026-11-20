@@ -1,13 +1,8 @@
-#' Align Sequences Using MAFFT
-#'
-#' @param input Character. Path to input FASTA file.
-#' @param output Character. Path to output aligned FASTA file.
-#' @param browse Logical. If `TRUE`, opens the resulting alignment in a browser via
-#'   [DECIPHER::BrowseSeqs()]. Default is `TRUE`.
-#' @param args Character vector or `NULL`. Additional CLI arguments passed to `mafft`.
-#'   Default is `NULL`.
-#'
-#' @return Invisibly returns the integer exit status code from `system2("mafft", ...)`.
+#' Wrapper function for MAFFT
+#' @param input Path to input FASTA file.
+#' @param output Path to output FASTA file.
+#' @param browse If \code{TRUE}, the alignment will be shown on default browser. 
+#' @param args Additional argument passed to MAFFT. Should be a character vector.
 #' @export
 mafft <- function(
     input,
@@ -40,17 +35,13 @@ mafft <- function(
     return(invisible(status_code))
 }
 
-#' Polish Sequence Alignment
-#'
+#' Polish alignment
 #' @description
 #' `r lifecycle::badge("deprecated")`
-#' Deprecated in version `0.0.1.9001` because alignment polishing in DNA barcoding is better
-#' performed manually with visual inspection.
+#' This function is deprecated in 0.0.1.9001 because alignment polishing, at least in DNA barcoding, should be done manually with visual inspection. 
 #' 
-#' @param aln A `DNAbin` alignment object.
-#' @param verbose Logical. Whether to print status messages via `cli`. Default is `TRUE`.
-#'
-#' @return A `DNAbin` object containing the polished alignment.
+#' @param aln DNAbin class object. Alignment to polish. 
+#' @return DNAbin class object. Polished alignment. 
 #' @export
 polish_alignment <- function(
     aln,
@@ -133,12 +124,9 @@ polish_alignment <- function(
     return(polished_alignment)
 }
 
-#' Visually Compare Original and Polished Alignments with MAFFT
-#'
-#' @param aln.old A `DNAbin` alignment object before polishing.
-#' @param aln.clean A `DNAbin` alignment object after polishing.
-#'
-#' @return Invisibly returns the combined re-aligned sequences as a `DNAbin` object.
+#' Check alignment polishing
+#' @param aln_old DNAbin class object. Alignment before polishing.
+#' @param aln_clean DNAbin class object. Alignment after polishing. 
 #' @export
 check_polish <- function(
     aln.old,
@@ -181,13 +169,7 @@ check_polish <- function(
     return(invisible(ape::as.DNAbin(aln.check)))
 }
 
-#' Check Stop Codons and Reading Frames in a Protein-Coding Alignment
-#'
-#' @param aln A named `DNAbin` alignment object.
-#' @param code Integer or character. Genetic code passed to `code` in [ape::trans()].
-#' @param verbose Logical. Whether to print status messages via `cli`. Default is `TRUE`.
-#'
-#' @return Invisibly returns a named list with elements `raw`, `tbl`, and `result`.
+#' Check stop codon and reading frame in protein coding gene alignment
 #' @export
 codon_summary <- function(
     aln, 
@@ -286,16 +268,18 @@ codon_summary <- function(
 #' Remove Empty Columns from an Alignment
 #'
 #' @description 
-#' Scans a `DNAbin` alignment and removes any columns (positions) where 
-#' all sequences consist entirely of specified target characters, such as gaps (`-`), 
-#' ambiguous bases (`N`), or missing data (`?`).
+#' Scans a \code{DNAbin} alignment and removes any columns (positions) where 
+#' all sequences consist entirely of specified target characters, such as gaps (\code{-}), 
+#' ambiguous bases (\code{N}), or missing data (\code{?}).
 #'
-#' @param x A `DNAbin` object (matrix, list, or vector). If provided as a list, 
-#'   all sequences must have the same length.
-#' @param chars Character vector specifying which bases should be treated as "empty". 
-#'   Defaults to `c("-", "n", "?")` (case-insensitive).
+#' @param x A \code{DNAbin} object. Can be a matrix or a list. If provided as a list, 
+#'   all sequences must have the exact same length (i.e., they must be aligned).
+#' @param chars A character vector specifying which bases should be treated as "empty". 
+#'   Defaults to \code{c("-", "n", "?")}. Case-insensitive.
 #'
-#' @return A `DNAbin` object of the same structure as `x` with empty columns removed.
+#' @return A \code{DNAbin} object of the same structure as \code{x} (matrix or list) 
+#'   with the empty columns removed.
+#' 
 #' @export
 trim_empty_columns <- function(x, chars = c("-", "n", "?")) {
     

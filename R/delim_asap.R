@@ -1,17 +1,13 @@
 #' @import S7
 NULL
 
-#' Run ASAP Species Delimitation
-#'
-#' @param input Character. Path to an aligned FASTA file used as input.
-#' @param output_dir Character. Path to the output directory.
-#' @param exe Character. Path to the ASAP executable file.
-#' @param dist Numeric or integer. Method for calculating genetic distance: `0` = Kimura-2P,
-#'   `1` = Jukes-Cantor, `2` = Tamura-Nei, `3` = simple p-distance. Default is `3`.
-#' @param overwrite Logical. Whether to overwrite existing files in `output_dir`. Default is `FALSE`.
-#' @param ... Additional arguments passed to the ASAP CLI executable.
-#'
-#' @return Character path to `output_dir`.
+#' Performing ASAP
+#' @param input Character. A path to aligned fasta file as input.
+#' @param name description
+#' @param dist Numeric. Method for calculating genetic distance. 0: Kimura-2P, 1: Jukes-Cantor, 2: Tamura Nei, 3: simple p-distance. Defualt to 3. 
+#' @param output_dir Character. A path to output directory. 
+#' @param exe Character. A path to ASAP excutable file.
+#' @return A path to the output directory. 
 #' @export
 asap_execute <- function(
     input, 
@@ -53,21 +49,7 @@ asap_execute <- function(
     return(output_dir)
 }
 
-#' ASAP Result S7 Class
-#'
-#' @description
-#' An S7 class storing parsed ASAP partition statistics, specimen-to-OTU assignments,
-#' and pairwise genetic distance matrices.
-#'
-#' @property partitions A `data.frame` of all evaluated ASAP partitions.
-#' @property best_rank An `integer` partition rank.
-#' @property best_score A `numeric` ASAP score for the partition.
-#' @property best_p A `numeric` p-value (`Proba`) for the partition.
-#' @property notu An `integer` number of delimited subsets/OTUs.
-#' @property otu A `data.frame` mapping specimen `identifier` to `otu`.
-#' @property dist.mat A pairwise distance matrix object.
-#'
-#' @export
+#' ASAP result
 asap <- new_class(
     "asap",
     properties = list(
@@ -81,15 +63,11 @@ asap <- new_class(
     )
 )
 
-#' Evaluate ASAP Output
-#'
-#' @param dir Character. Path to an ASAP result directory.
-#' @param part Integer. Number of top partitions to evaluate. Default is `3`.
-#' @param smart_filter Logical. If `TRUE`, filters partitions by group count (`NbSubset`) keeping
-#'   the lowest `p.val` per group size before ranking by `Asap.score`. If `FALSE`, takes the top
-#'   distinct `Asap.score` values directly. Default is `TRUE`.
-#'
-#' @return A list of [asap] S7 objects of length `part`.
+#' Evaluates ASAP output
+#' @param dir A path to ASAP result directory.
+#' @param part Integer. Number of the best partitions to evaluate. Default to 3. 
+#' @param smart_filter Logical. If TRUE, filters out duplicate partitions with the same number of groups, keeping only the one with the best p-value. Default to TRUE.
+#' @return A list of [asap] class objects length of \code{part}.
 #' @export
 asap_evaluate <- function(
     dir,

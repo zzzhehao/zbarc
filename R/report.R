@@ -1,14 +1,11 @@
-#' Generate an Interactive HTML Report Using Quarto
+#' Generate an Interactive BLAST Report
 #'
-#' @param input Character vector. Path(s) to input file(s) passed to the Quarto template's
-#'   `input` parameter.
-#' @param output_file Character. Path where the final HTML report should be saved.
-#' @param report_type Character. Type of report to render: `"ncbi"` (`ncbi_blast_report.qmd`),
-#'   `"bold"` (`bold_barcodeid_report.qmd`), or `"distance"` (`genetic_distance_report.qmd`).
-#' @param description Character. Title or run description passed to the Quarto template.
-#'   Defaults to `as.character(Sys.Date())` when omitted.
+#' @param input A character vector of paths to input files.
+#' @param output_file The path where the final HTML report should be saved.
+#' @param report_type Type of report to render. Currently support \code{ncbi} and \code{bold}. \code{ncbi} takes single-json file from NCBI BLAST result; \code{bold} takes jsonl file from BOLD Barcode ID result. 
+#' @param description A string representing the name/title of the run.
 #'
-#' @return Invisibly returns the normalized path to the generated HTML file.
+#' @return The absolute path to the generated HTML file, invisibly.
 #' @export
 render_report <- function(
     input, 
@@ -86,20 +83,18 @@ render_report <- function(
     invisible(normalizePath(output_file))
 }
 
-#' Generate a Combined Barcoding HTML Report
+#' Generate a Combined Barcoding Report
 #'
-#' @param bold_jsonl Character. Path to a BOLD JSONL result file.
-#' @param blast_json Character. Path to an NCBI BLAST JSON result file.
-#' @param fasta Character. Path to a sequence FASTA file.
-#' @param metadata Optional `data.frame` containing sequence/specimen metadata. Default is `NULL`.
-#' @param key_col Unquoted column name in `metadata` matching sequence names. Default is `NULL`.
-#' @param aligned Logical. If `FALSE`, aligns `fasta` via [mafft()] before rendering. Default is `TRUE`.
-#' @param output_file Character. Path where the final HTML report should be saved.
-#' @param description Character. Title or description of the run. Default is `as.character(Sys.Date())`.
-#' @param mafft_args Character vector or `NULL`. Additional arguments passed to [mafft()] when
-#'   `aligned = FALSE`. Default is `NULL`[cite: 8, 11].
+#' @param bold_jsonl Path to BOLD JSONL file.
+#' @param blast_json Path to NCBI BLAST JSON file.
+#' @param fasta Path to FASTA file.
+#' @param metadata Optional data.frame containing metadata.
+#' @param key_col Unquoted column name in `metadata` that matches sequence names.
+#' @param aligned Logical. If FALSE, unaligned FASTA will be aligned via MAFFT.
+#' @param output_file The path where the final HTML report should be saved.
+#' @param description A string representing the name/title of the run.
+#' @param mafft_args Additional arguments passed to MAFFT if aligned = FALSE.
 #'
-#' @return Invisibly returns the normalized path to the generated HTML file.
 #' @export
 render_report_barcode <- function(
     bold_jsonl, 

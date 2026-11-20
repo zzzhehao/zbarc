@@ -1,15 +1,10 @@
-#' Clean Sequence Labels in a FASTA Alignment
+#' Clean Sequence Labels in Alignment
 #' 
 #' @description
-#' Formats sequence labels in a FASTA file by appending the detected gene name (`COI`, `18S`,
-#' `28S`, or `16S`) from `basename(fasta_path)` to voucher IDs matching `^VPS[0-9]{3}` or
-#' `^ZHH[0-9]{3}`, and strips trailing `.1` or `.1_(reversed)` suffixes from sequence names.
+#' This only applies to DZMB collection where the sequences are managed using field ID. The gene will be determined by the file name (whether it's COI, 18S, or 28S) and a gene suffix will be added to the voucher (e.g. VPS101_COI, ZHH003_18S). 
 #' 
-#' @param fasta_path Character. Path to the input FASTA file.
-#' @param noprefix Logical. If `TRUE`, strips leading `ZHH` or `VPS` prefixes from sequence labels.
-#'   Default is `FALSE`.
-#'
-#' @return Character path to the newly written `*_cleaned.fasta` file in the same directory.
+#' @param fasta_path Path to FASTA file
+#' @return A new FASTA file will be written in the same directory. The path to the new file will be returned.
 #' @export
 clean_label <- function(fasta_path, noprefix = F){
     genes <- c("COI", "18S", "28S", "16S")
@@ -40,28 +35,29 @@ clean_label <- function(fasta_path, noprefix = F){
     return(new_fasta_path)
 }
 
-#' Trim Conserved Alignment Blocks with Gblocks
+
+#' Wrapper function for Gblocks
 #'
 #' @description 
-#' User-facing wrapper for Gblocks that executes alignment trimming, renames Gblocks' default
-#' output file cleanly (e.g., `_gb.fasta`), and returns the output file path.
+#' User-facing wrapper for Gblocks. It automatically formats the output filename 
+#' to avoid Gblocks' quirky \code{.fasta-gb} extension (e.g., rewriting it 
+#' cleanly to \code{_gb.fasta}), executes the alignment trimming, and returns 
+#' the path to the resulting FASTA file.
 #'
-#' @param input Character. Path to the input FASTA file.
-#' @param output Character or `NULL`. Custom path for the trimmed FASTA file. If `NULL` (default),
-#'   inserts `_gb` before the file extension.
-#' @param t Character. Sequence type: `"d"` (DNA), `"p"` (Protein), or `"c"` (Codons). Default is `"d"`.
-#' @param b1 Numeric or `"min"`. Minimum number of sequences for a conserved position. When `"min"`,
-#'   calculated as `ceiling(n_seq / 2) + 1`. Default is `"min"`.
-#' @param b2 Numeric or `"min"`. Minimum number of sequences for a flank position. When `"min"`,
-#'   equals `b1`. Default is `"min"`.
-#' @param b3 Integer. Maximum number of contiguous non-conserved positions. Default is `20`.
-#' @param b4 Integer. Minimum block length. Default is `2`.
-#' @param b5 Character. Allowed gap positions: `"a"` (All), `"h"` (Half), or `"n"` (None). Default is `"a"`.
-#' @param args Character vector or `NULL`. Additional CLI arguments passed to Gblocks. Default is `NULL`.
-#' @param exec Character. Path or command for the Gblocks executable. Default is `"Gblocks"`.
-#' @param browse Logical. If `TRUE`, opens the generated HTML visualization in a browser. Default is `TRUE`.
+#' @param input Path to input FASTA file.
+#' @param output Optional. Custom path for the output FASTA file. If \code{NULL} (default), 
+#'   automatically appends \code{_gb} before the input file's extension.
+#' @param t Type of sequence: \code{"d"} (DNA), \code{"p"} (Protein), or \code{"c"} (Codons). Default is \code{"d"}.
+#' @param b1 Minimum number of sequences for a conserved position. If \code{"min"}, calculated as \code{ceiling(n_seq / 2) + 1}.
+#' @param b2 Minimum number of sequences for a flank position. If \code{"min"}, defaults to the value of \code{b1}.
+#' @param b3 Maximum number of contiguous nonconserved positions. Default is \code{20}.
+#' @param b4 Minimum length of a block. Default is \code{2}.
+#' @param b5 Allowed gap positions: \code{"a"} (All), \code{"h"} (Half), or \code{"n"} (None). Default is \code{"a"}.
+#' @param args Additional arguments passed to Gblocks. Should be a character vector.
+#' @param exec Path or command to the Gblocks executable. Defaults to \code{"Gblocks"}.
+#' @param browse Logical. If \code{TRUE}, the HTML visualization will be opened in the browser.
 #' 
-#' @return Character path to the trimmed FASTA alignment file.
+#' @return A character string representing the absolute or relative path to the trimmed FASTA alignment.
 #' @export
 gblocks <- function(
     input,
@@ -108,11 +104,6 @@ gblocks <- function(
     return(output)
 }
 
-#' Internal Gblocks Execution Helper
-#'
-#' @inheritParams gblocks
-#' @return Invisibly returns the integer exit status code from `system2()`.
-#' @noRd
 .gblocks <- function(
     input,
     output,
@@ -208,16 +199,12 @@ gblocks <- function(
     return(invisible(status_code))
 }
 
-#' Convert a NEXUS Alignment to FASTA Format
-#'
-#' @param nexus_path Character. Path to the input NEXUS alignment file.
-#' @param fasta_path Character or `NULL`. Path for the output FASTA file. If `NULL`, replaces
-#'   `\\.nexus$` in `nexus_path` with `.fasta`.
-#' @param safe_name Logical. Whether to remove underscores (`_`) from sequence labels. Default is `FALSE`.
-#' @param remove_outgroup Character vector or `NULL`. Sequence labels to drop before renaming.
-#'   Default is `NULL`.
-#'
-#' @return Character path to the written FASTA file.
+#' Convert NEXUS alignment to FASTA alignment
+#' @param nexus_path Path to NEXUS file.
+#' @param fasta_path Path to FASTA file.
+#' @param safe_name logical. Whether to modify the name to remove "_".
+#' @param remove_outgroup Vector of sequence labels to remove. Default to `NULL` without removing any sequence. This happens before modifying sequence labels if `safe_name` is set to TRUE.
+#' @return The FASTA file will be written in the same directory. The path will be returned.
 #' @export
 convert_nexus2fasta <- function(nexus_path, fasta_path=NULL, safe_name=F, remove_outgroup=NULL) {
     if (is.null(fasta_path)) {
@@ -238,20 +225,15 @@ convert_nexus2fasta <- function(nexus_path, fasta_path=NULL, safe_name=F, remove
     return(fasta_path)
 }
 
-#' Write MRCA Priors into a NEXUS Alignment File for BEAST2
+#' Write MRCA Prior into Alignment Nexus File for BEAST2
 #' 
-#' @description
-#' Appends a `BEGIN sets;` block defining `taxset` monophyly constraints to a NEXUS file so
-#' they can be loaded into BEAUti and BEAST2 (e.g., to constrain outgroups for ultrametric trees).
+#' BEAST2 produces full bifurcation ultrametric tree required to perform GMYC. MRCA Prior enforces certain taxa to be monophyly in the resulted tree, which serves as a method of defining the outgroups. The MRCA Prior information could be written in a nexus block and recognized in BEAUti and BEAST2.
 #' 
-#' @param nexus Character. Path to the target NEXUS alignment file.
-#' @param monophyly_groups List of lists, where each element specifies one monophyly group:
+#' @param nexus A path to the alignment nexus file.
+#' @param monophyly_groups A list defining monophyly groups. Each element of this list defines one monophyly group and must be a list itself containing the following two components:
 #'   \describe{
-#'     \item{`name`}{Character string of length 1 naming the `taxset`.}
-#'     \item{`labels`}{Character vector of taxon labels matching those in the alignment.}
-#'   }
-#'
-#' @return Invisibly returns the result of `write()`.
+#'     \item{\code{name}}{A character string (length 1) specifying the group's name.}
+#'     \item{\code{labels}}{A character vector of taxa belonging to that group, this should be identical to the ones in the alginment.}}
 #' @export
 beast2_write_mrca <- function(nexus, monophyly_groups) {
     MRCA <- purrr::map_vec(monophyly_groups, \(g){
@@ -264,24 +246,22 @@ beast2_write_mrca <- function(nexus, monophyly_groups) {
     write(MRCA, nexus, append = T, sep = "\n")
 }
 
-#' Run Automatic Barcoding Gap Discovery (ABGD)
+#' Perform Automatic Barcoding Gap Detection (ABGD)
 #' 
-#' @param alignment Character. Path to the input FASTA alignment file.
-#' @param exe Character. Path to the ABGD executable.
-#' @param output_folder Character or `NULL`. Output directory path. Defaults to `file.path(dirname(alignment), "ABGD")`.
-#' @param a Logical. Whether to pass `-a` to ABGD. Default is `TRUE`.
-#' @param p Numeric. Minimum a priori intraspecific divergence (`Pmin`). Default is `0.001`.
-#' @param P Numeric. Maximum a priori intraspecific divergence (`Pmax`). Default is `0.1`.
-#' @param n Integer. Number of steps in `[Pmin, Pmax]`. Default is `20`.
-#' @param d Integer. Genetic distance option: `0` = Kimura-2P, `1` = Jukes-Cantor, `2` = Tamura-Nei,
-#'   `3` = simple p-distance. Default is `3`.
-#' @param X Numeric. Minimum relative gap width / slope increase (`X`). Default is `1.5`.
-#' @param args Character or `NULL`. Additional CLI arguments passed to ABGD. Default is `NULL`.
-#' @param overwrite Logical. Whether to overwrite `output_folder` if it already contains files.
-#'   Default is `FALSE`.
-#'
-#' @return Character path to `output_folder`.
-#' @seealso [abgd_read_result()], [abgd_read_result_all()], [abgd_summary()], [abgd_delim()]
+#' @param alignment Path to the FASTA file.
+#' @param exe Path to the ABGD executable.
+#' @param output_folder Path to output folder.
+#' @param p Minimal a priori value (Pmin, default to 0.001). 
+#' @param P Maximal a priori value (Pmax, default to 0.1). 
+#' @param n Number of steps in \[Pmin, Pmax\] (default to 20)
+#' @param d Distance to use (0: Kimura-2P, 1: Jukes-Cantor, 2: Tamura-Nei, 3:simple distance; default to 3). 
+#' @param X Mininmum Slope Increase (default to 1.5)
+#' @param overwrite Logical. Whether to overwrite the output folder when it alreay exists and there are files in it. 
+#' @seealso [abgd_read_result()]
+#' @seealso [abgd_read_result_all()]
+#' @seealso [abgd_summary()]
+#' @seealso [abgd_delim()]
+#' @return The output folder where ABGD CLI program will export the result
 #' @export
 abgd_execute <- function(
     alignment, exe, output_folder = NULL, 
@@ -332,13 +312,10 @@ abgd_execute <- function(
     return(output_folder)
 }
 
-#' Plot Distance Histogram from an ABGD Distance Matrix File
-#'
-#' @param distmat_path Character. Path to the `*_distmat.txt` file generated by ABGD.
+#' Plot out distance histogram
+#' @param distmat_path Path to distmat txt file generated by ABGD program
 #' 
-#' @return A `ggplot` histogram object.
 #' @seealso [abgd_execute()]
-#' @export
 abgd_disthist <- function(distmat_path) {
     distmat_raw <- read.table(distmat_path, sep = " ", skip = 1)
     distmat.plot <- distmat_raw[,-1] %>% 
@@ -348,17 +325,16 @@ abgd_disthist <- function(distmat_path) {
     return(distmat.plot)
 }
 
-#' Read a Single ABGD Partition Result File
+#' Read ABGD Result
 #' 
 #' @description
-#' Parses an ABGD partition output file (`part*.txt`) into a long-format `data.frame` of
-#' `taxa` and `group` assignments.
-#'
-#' @param path Character. Path to an ABGD partition text file.
-#'
-#' @return A `data.frame` (tibble) with columns `taxa` (character) and `group` (factor).
-#' @seealso [abgd_execute()], [abgd_read_result_all()], [abgd_summary()], [abgd_delim()]
+#' I extracted the code from `{delimtools}` function `abgd_tbl` as it just does what this function should. I omit the execution part from that function because it doesn't provide full control of the program, especially the two parameters `p` and `P` which might be sensitive to datasets, and leaves `X` controllable, which should be left as default most of the time except the datasets are very noisy. 
 #' @export
+#' @seealso [abgd_execute()]
+#' @seealso [abgd_read_result_all()]
+#' @seealso [abgd_summary()]
+#' @seealso [abgd_delim()]
+#' @return A data frame of the delimitation result
 abgd_read_result <- function(path) {
     delim <- readr::read_delim(path, delim = ";", col_names = c("labels"), col_types = "c")
     delim <- delim %>% 
@@ -373,18 +349,17 @@ abgd_read_result <- function(path) {
     return(delim)
 }
 
-#' Read All ABGD Partition Results in a Directory
+#' Read All ABGD Partition Results
 #' 
 #' @description
-#' Loads all initial and recursive ABGD partition files in `output_folder` along with metadata
-#' such as partition type, index, and group count.
-#'
-#' @param output_folder Character. Path to the ABGD output directory.
-#'
-#' @return A list of lists containing `path`, `partition_type`, `index`, `group_count`, and `result`
-#'   for each partition file.
-#' @seealso [abgd_execute()], [abgd_read_result()], [abgd_summary()], [abgd_delim()]
+#' A bulk loading version of `abgd_read_result`.
+#' 
 #' @export
+#' @seealso [abgd_execute()]
+#' @seealso [abgd_read_result()]
+#' @seealso [abgd_summary()]
+#' @seealso [abgd_delim()]
+#' @return A named list of summary for all partitions
 abgd_read_result_all <- function(output_folder) {
     part.files <- list.files(output_folder, pattern = regex("part(init)?\\.[0-9]+\\.txt$"), full.names = T)
     cvs.file <- list.files(output_folder, pattern = regex("res.cvs$"), full.names = T)
@@ -404,21 +379,26 @@ abgd_read_result_all <- function(output_folder) {
     return(abgd.summary)
 }
 
-#' Summarize ABGD Partitions and Plot Group Counts
+#' Generate Summary for ABGD Result
 #' 
-#' @param output_folder Character. Path to the ABGD output folder.
-#' @param silent Logical. If `FALSE`, prints the summary plot. Default is `FALSE`.
-#' @param text.partition.size Numeric. Text size for prior divergence labels above points.
-#'   Default is `3.4`.
+#' @param output_folder Path to the ABGD output folder.
+#' @param silent Logical. Whether show plot or not.
+#' @param text.partition.size Text size of the prior paritition over points. 
 #' 
-#' @return A named list of length 2:
+#' @return A list of length 2.
 #'   \describe{
-#'     \item{`plot`}{A `ggplot` object showing initial and recursive group counts across partitions.}
-#'     \item{`summary`}{A `data.frame` summarizing `index`, `initial`, `recursive`, `fine_group`,
-#'       `fine_group_prop`, and `prior` intraspecific divergence.}
-#'   }
-#' @seealso [abgd_execute()], [abgd_read_result()], [abgd_read_result_all()], [abgd_delim()]
+#'     \item{\code{plot}}{A plot showing number of groups fround with each partition will be shown.}
+#'     \item{\code{summary}}{A data.frame of number of groups and the prior intraspecific divergence of each partition will be returned.}
+#' 
 #' @export
+#' @seealso [abgd_execute()]
+#' @seealso [abgd_read_result()]
+#' @seealso [abgd_read_result_all()]
+#' @seealso [abgd_delim()]
+#' @return A named list. \describe{
+#'   \item{\code{plot}}{A ggplot object, the summary plot}
+#'   \item{\code{summary}}{A data frame of the partition summary}
+#' }
 abgd_summary <- function(
     output_folder, 
     silent = F,
@@ -465,17 +445,18 @@ abgd_summary <- function(
     return(list(plot = summary.plot, summary = abgd.summary))
 }
 
-#' Extract Species Delimitation Table from ABGD Recursive Partitions
+#' Perform Species Delimitation with ABGD Result
 #' 
-#' @param output_folder Character. Path to the ABGD output folder.
-#' @param indices Numeric or integer vector. Partition indices to extract from recursive partitions.
-#' @param label Character vector or `NULL`. Suffix(es) appended to `"abgd_"` to name output
-#'   columns; must match `length(indices)` when `length(indices) > 1`. If `NULL` and `length(indices) == 1`,
-#'   the column is named `"abgd"`.
+#' @param output_folder Output folder of the ABGD result.
+#' @param indices A numerical vector indicating the indices of the partitions to be evaluated.
+#' @param label A character vector. Name to added to the column name of the output data frame. The length must match with \code{indices}.
 #' 
-#' @return A `data.frame` (tibble) with column `taxa` and one delimitation column per selected partition.
-#' @seealso [abgd_execute()], [abgd_read_result()], [abgd_read_result_all()], [abgd_summary()]
 #' @export
+#' @seealso [abgd_execute()]
+#' @seealso [abgd_read_result()]
+#' @seealso [abgd_read_result_all()]
+#' @seealso [abgd_summary()]
+#' @return A data frame of the ABGD result.
 abgd_delim <- function(output_folder, indices, label = NULL) {
     abgd.res <- abgd_read_result_all(output_folder)
     abgd.res.select <- abgd.res %>%
@@ -500,17 +481,14 @@ abgd_delim <- function(output_folder, indices, label = NULL) {
     return(abgd.delim.res)
 }
 
-#' Perform GMYC Species Delimitation on a BEAST2 Tree
+#' Perform GMYC on the Tree Generated by BEAST2
 #' 
-#' @param contree Character. File path to a binary, ultrametric NEXUS tree (e.g., maximum clade
-#'   credibility tree from BEAST2).
-#' @param prefix Character or `NULL`. Optional prefix prepended to output column names.
-#' @param method Character. GMYC threshold method: `"single"`, `"multiple"`, or `"both"`.
-#'   Default is `"both"`.
-#'
-#' @return A `data.frame` containing `identifier` and delimited species columns for the requested method(s).
+#' @param contree File path to the maximum credibility tree produced by BEAST2
+#' @param prefix Character. Prefix to be added to the column name of the output data frame
+#' @param method Character. Indicates whether to perform the single threshold (\code{single}) or the multiple threshold (\code{multiple}) GMYC, or \code{both}.
 #' @seealso [beast2_write_mrca()]
 #' @export
+#' @return A data frame of the delimitation result
 gmyc_eval <- function(contree, prefix = NULL, method = "both") {
     contree <- ape::read.nexus(contree)
     if (!ape::is.binary(contree) | !ape::is.ultrametric(contree)) {cli::cli_abort("The tree is not binary or ultrametric.")}
@@ -528,18 +506,17 @@ gmyc_eval <- function(contree, prefix = NULL, method = "both") {
     return(res)
 }
 
-#' Run Substitution Model Selection (ModelFinder) in IQ-TREE
+#' Test for Best Fit Model in IQ-TREE
 #' 
 #' @description
-#' Copies a FASTA alignment into a dedicated run subdirectory, generates a shell script, and
-#' executes IQ-TREE with `-m MF` to test substitution models.
+#' This function calls local IQ-TREE CLI excutable to perform the modelFinder.
 #' 
-#' @param fasta_path Character. Path to the input FASTA alignment file.
-#' @param run_name Character. Run label used to create the subdirectory and output prefix.
-#' @param output_folder Character. Base parent folder where `run_name` will be created.
-#' @param iqtree_exe Character. Path to the IQ-TREE executable.
+#' @param fasta_path Path to fasta file of the alignment
+#' @param run_name Character. A custom name to be added to output files
+#' @param output_folder Path to generate all output files from IQ-TREE
+#' @param iqtree_exe Path to the IQ-TREE excutable
 #' 
-#' @return Character path to the created run output directory (`file.path(output_folder, run_name)`).
+#' @return Path to the output folder
 #' @export
 test_sub_model <- function(
     fasta_path,
@@ -567,23 +544,20 @@ test_sub_model <- function(
     return(output_folder)
 }
 
-#' Exclude Sequences from an Alignment by Filtering Metadata
+#' Exclude Sequences from Alignment by Filtering on Metadata
 #' 
 #' @description
-#' Filters sequences in a `DNAbin` object whose `INSDSeq_primary-accession` matches metadata rows
-#' matching `pattern` in `field`, optionally retaining a random subset of matched sequences.
+#' Known issue: this function only filter the sequence based on single filtering criteria. For complex filter, take the source code and write for yourself. 
 #' 
-#' @param aln A named `DNAbin` alignment object.
-#' @param field Character. Column name in `metadata` to match against `pattern`.
-#' @param pattern Character. Regular expression pattern; matching records are selected for exclusion.
-#' @param retain Numeric or integer. Number of matching sequences to randomly retain rather than
-#'   exclude. Default is `0`.
-#' @param seed Integer or `NULL`. Optional random seed passed to [set.seed()] when `retain != 0`.
-#' @param metadata A `data.frame` containing `INSDSeq_primary-accession` and `field`. Defaults to
-#'   `zhutilsr::db_pull("metadata.Sequence.NCBI", silent = T)`.
-#'
-#' @return A filtered `DNAbin` alignment object.
+#' 
+#' @param aln Alignment in DNAbin
+#' @param field Character. Field (column) in metadata to apply the filter
+#' @param pattern Character. Regex pattern to look for. Matching result will be excluded.
+#' @param retain Numeric. Number of sequence to randomly exclude from exclusion (i.e. retain). Useful when excluding a group with large amount of sequence but keeping them represented in alignment. If bigger than number of sequences matching filtering criteria, no sequence will be excluded.
+#' @param seed Will be passed to [set.seed]. Controls random selection of sequences when \code{retain} is not 0.
+#' @param metadata A data frame. The metadata. Must incldue column given in \code{field}
 #' @export
+#' @return An alignment in DNAbin
 exclude_by_meta <- function(aln, field, pattern, retain = 0, seed = NULL, metadata = zhutilsr::db_pull("metadata.Sequence.NCBI", silent = T)) {
     exclude.meta <- metadata %>% 
         dplyr::filter(stringr::str_detect(.data[[field]], pattern)) %>% 
@@ -605,20 +579,17 @@ exclude_by_meta <- function(aln, field, pattern, retain = 0, seed = NULL, metada
     return(aln_reduced)
 }
 
-#' Split a Concatenated Alignment Back into Single-Locus FASTA Files
+#' Split Concatenated Alignment Back into Single-locus Alignment
 #' 
 #' @description
-#' Slices a concatenated `DNAbin` alignment matrix by locus lengths, drops taxa that are
-#' completely missing/ambiguous in a given locus, and writes `reextracted_<locus>.fasta` files.
+#' Why should I do this? You might ask. Well, to get the actual sequences of each locus used in subsequent analysis to perform the model test.
 #' 
-#' @param alignment A `DNAbin` alignment matrix.
-#' @param loci_name Character vector. Names of each locus.
-#' @param loci_length Numeric or integer vector. Column length of each locus in `alignment`.
-#' @param output_folder Character. Directory where re-extracted FASTA files are written.
-#'
-#' @return Character vector of output FASTA file paths.
+#' @param alignment Concatenated alignment
+#' @param loci_name Names of the loci
+#' @param loci_length Lengths of each loci
+#' @param output_folder Output folder
+#' 
 #' @seealso [concatenate_alignment()]
-#' @export
 split_concat_alignment <- function(
     alignment,
     loci_name,
@@ -652,39 +623,32 @@ split_concat_alignment <- function(
     return(paths)
 }
 
-#' Concatenate Multiple Single-Locus Alignments into a Multi-Locus Alignment
+#' Concatenate Multiple Alignment into Multi-locus Alignment
 #' 
-#' @description
-#' Reads single-locus FASTA alignments, optionally applies metadata filtering via [exclude_by_meta()],
-#' maps accession/sequence identifiers to organism labels using `sequence.map`, filters taxa by
-#' locus availability, writes the concatenated alignment and per-locus subsets, and returns summary metadata.
+#' Take individual alignment in fasta file, pair them based on a sequence mapping table, perform sequence filtering based on metadata ([exclude_by_meta()]), glue the paired sequences into concatenated sequence, construct concatenated alignment based on their sequence availability at certain loci.
 #' 
-#' @param fasta_path Character vector. Paths to single-locus FASTA alignment files in concatenation order.
-#' @param names.alignments Character vector. Locus names matching `fasta_path` in length and order.
-#' @param sequence.map A `data.frame` mapping sequence/accession IDs to organism identifiers.
-#' @param identifier Character. Column name in `sequence.map` providing the organism/taxon label.
-#' @param accs_col Character vector. Column names in `sequence.map` (one per locus) holding
-#'   accession numbers or sequence names to match against FASTA headers.
-#' @param include_strategy Character. Taxon inclusion rule across `include_strategy_loci`: `"all"`
-#'   (default) or `"any"`.
-#' @param include_strategy_loci Character vector. Locus names checked under `include_strategy`.
-#' @param include_by Argument accepted in signature (currently unused in function body).
-#' @param output_folder Character. Directory for output alignment files.
-#' @param run_name Character or `NULL`. Optional suffix used in output filename (`concat_<run_name>.nexus`).
-#' @param exclude_options List or `NULL`. Argument list (excluding `aln`) passed to [exclude_by_meta()],
-#'   or a list of argument lists for sequential filtering steps. Default is `NULL`.
+#' @param fasta_path A character vector of path to the fasta file of each individual alignment. The order of the path indicates their order in the alignment.
+#' @param names.alignment A character vector. Name of the loci. Must have the same length as \code{fasta_path}.
+#' @param sequence.map A data frame to map sequences to individuals. Must have columns specified in \code{identifier} and \code{accs_col}
+#' @param identifier Character. Name of the column in \code{sequence.map} corresponds to the organism's ID.
+#' @param accs_col A character vector. Names of the column in \code{sequence.map} where accession numbers or sequence names of each organism are stored. Sequence names in the alignment of \code{fasta_path} will be matched against these.
+#' @param include_strategy Either to only include taxa that has \code{all} sequences in the loci specified in \code{include_strategy_loci}, or taxa that has sequence in \code{any} of the loci.
+#' @param include_strategy_loci Names of the loci used to check whether a taxa should be included or not.
+#' @param output_folder A path to the output folder.
+#' @param exclude_options A list of arguments passed to [exclude_by_meta()], except the first argument. Will used to exclude sequences. A list of the argument list can be provided to perform multiple steps of filtering.
 #' 
-#' @return A named list containing:
-#'   \describe{
-#'     \item{`alignment`}{The concatenated `DNAbin` alignment matrix.}
-#'     \item{`concat_fasta_path`}{Path to the written concatenated alignment file.}
-#'     \item{`loci_fasta_path`}{Character vector of paths to per-locus re-extracted FASTA files.}
-#'     \item{`taxa`}{Character vector of included taxon labels.}
-#'     \item{`loci_parition`}{A `data.frame` of locus `name` and `length`.}
-#'     \item{`sequence_composition`}{A `data.frame` indicating per-locus sequence presence for included taxa.}
-#'   }
-#' @seealso [exclude_by_meta()], [split_concat_alignment()]
 #' @export
+#' 
+#' @return Concatenated alignment will be written into a fasta file. The function returns a named list with information of the concatenated alignment: \describe{
+#'   \item{\code{alignment}}{The acutal concatenated alignment object.}
+#'   \item{\code{concat_fasta_path}}{Path to the concatenated alignment file}
+#'   \item{\code{loci_fasta_path}}{Path to the fasta file of re-extracted alignment of each locus}
+#'   \item{\code{taxa}}{Names of the taxa included in the alignment}
+#'   \item{\code{loci_partition}}{A data frame. Storing the names of the loci and their length}
+#' }
+#' 
+#' @seealso [exclude_by_meta()]
+#' @seealso [split_concat_alignment()]
 concatenate_alignment <- function(
     fasta_path, names.alignments, sequence.map, identifier, accs_col, 
     include_strategy = "all", include_strategy_loci, include_by, 
@@ -800,12 +764,6 @@ concatenate_alignment <- function(
     return(res)
 }
 
-#' Summarize Alignment Dimensions and Taxa from a FASTA or NEXUS File
-#'
-#' @param path Character. Path to a `.fasta` or `.nexus` alignment file.
-#'
-#' @return A named list with elements `ntaxa` (integer), `width` (integer), and `taxa` (character vector).
-#' @export
 summarize_alignment <- function(path){
     if (stringr::str_detect(path, "\\.nexus$")) {
         aln <- ape::read.nexus.data(path)
@@ -828,15 +786,6 @@ summarize_alignment <- function(path){
     ))
 }
 
-#' Merge Multiple FASTA Files and Deduplicate Sequence Names
-#'
-#' @param ... Character paths to input FASTA files.
-#' @param output_file Character. Path to the merged output FASTA file.
-#' @param overwrite Logical. Whether to overwrite `output_file` if it already exists.
-#'   Default is `FALSE`.
-#'
-#' @return Invisibly returns the result of [ape::write.FASTA()].
-#' @export
 merge_fasta <- function(..., output_file, overwrite = FALSE) {
     combined <- list(...) %>% purrr::map(~ape::read.FASTA(.x)) %>% purrr::reduce(\(x,y) c(x, y))
     
@@ -853,12 +802,7 @@ merge_fasta <- function(..., output_file, overwrite = FALSE) {
     ape::write.FASTA(combined, output_file)
 }
 
-#' Convert a `DNAbin` Object to a `Biostrings::DNAStringSet`
-#'
-#' @param DNAbin A `DNAbin` object.
-#'
-#' @return A `Biostrings::DNAStringSet` object.
-#' @noRd
+#' Converting DNAbin sequence to DNAStringSet object
 .DNAbin2DNAStringSet <- function(DNAbin) {
     DNAbin %>% as.character %>% lapply(., paste0, collapse = "") %>% unlist %>% Biostrings::DNAStringSet
 }
