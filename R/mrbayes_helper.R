@@ -283,9 +283,17 @@ prepare_mrbayes_nexus <- function(
 
     mrbayes_block <- do.call(mrbayes_block, arg_ls)
 
+    # use safe name
+    names(alignment) <- zhutilsr::.safe_name(names(alignment))
+
     dir.create(dirname(output_path), recursive = T)
     file_output_path <- ifelse(stringr::str_detect(output_path, "\\.nexus$"), output_path, paste0(output_path, ".nexus"))
+
     ape::write.nexus.data(alignment, file_output_path, interleaved = F)
     write(mrbayes_block, file_output_path, append = T)
+
+    # TODO: SUMMARY
+
     return(file_output_path)
 }
+
