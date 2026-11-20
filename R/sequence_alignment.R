@@ -47,7 +47,7 @@ polish_alignment <- function(
     aln,
     verbose = T
 ) {
-lifecycle::deprecate_warn(
+    lifecycle::deprecate_warn(
         when = "0.0.1.9001",
         what = "polish_alignment()"
     )
@@ -263,4 +263,71 @@ codon_summary <- function(
     }
 
     return(invisible(list(raw = stopcodon.summary, tbl = stopcodon.summary.tbl, result = stopcodon.summary.res)))
+}
+
+#' Remove Empty Columns from an Alignment
+#'
+#' @description 
+#' Scans a \code{DNAbin} alignment and removes any columns (positions) where 
+#' all sequences consist entirely of specified target characters, such as gaps (\code{-}), 
+#' ambiguous bases (\code{N}), or missing data (\code{?}).
+#'
+#' @param x A \code{DNAbin} object. Can be a matrix or a list. If provided as a list, 
+#'   all sequences must have the exact same length (i.e., they must be aligned).
+#' @param chars A character vector specifying which bases should be treated as "empty". 
+#'   Defaults to \code{c("-", "n", "?")}. Case-insensitive.
+#'
+#' @return A \code{DNAbin} object of the same structure as \code{x} (matrix or list) 
+#'   with the empty columns removed.
+#' 
+#' @export
+trim_empty_columns <- function(x, chars = c("-", "n", "?")) {
+    
+    # 1. Type verification
+    if (!inherits(x, "DNAbin")) {
+        stop("Input must be a 'DNAbin' object.")
+    }
+    
+    # 2. Check structure and enforce equal lengths (alignment requirement)
+    was_list <- FALSE
+    if (is.list(x)) {
+        lens <- lengths(x)
+        if (length(unique(lens)) > 1) {
+            stop(
+                "Cannot extract columns from sequences of different lengths. ",
+                "Please align the sequences first or ensure they are padded to the same length."
+            )
+        }
+        x_mat <- as.matrix(x)
+        was_list <- TRUE
+    } else if (is.matrix(x)) {
+        x_mat <- x
+    } else {
+        # Fallback for single vectors (1D)
+        x_mat <- as.matrix(x)
+    }
+    
+    # 3. Convert user characters into ape's internal raw byte format
+    # This prevents the need to run as.character() on a massive alignment matrix
+    target_raw <- as.vector(ape::as.DNAbin(matrix(tolower(chars), nrow = 1)))
+    
+    # 4. Identify matching elements across the entire matrix (returns flat logical vector)
+    match_logical <- x_mat %in% target_raw
+    
+    # Reshape back into matrix form
+    match_mat <- matrix(match_logical, nrow = nrow(x_mat), ncol = ncol(x_mat))
+    
+    # 5. Identify columns where ALL elements are TRUE (i.e., colSum equals number of rows)
+    col_is_empty <- colSums(match_mat) == nrow(x_mat)
+    
+    # 6. Keep only columns that are NOT entirely empty
+    res_mat <- x_mat[, !col_is_empty, drop = FALSE]
+    class(res_mat) <- "DNAbin"
+    
+    # 7. Return in the same format the user provided
+    if (was_list) {
+        return(as.list(res_mat))
+    }
+    
+    return(res_mat)
 }
