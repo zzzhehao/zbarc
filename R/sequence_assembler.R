@@ -1,4 +1,46 @@
 #' Assemble contigs by mapping sanger sequencing reads to a reference sequence
+#' 
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#' This function is deprecated in version 0.0.1.9001 and will be removed in a future update. 
+#' 
+#' Assemble a set of sanger sequencing reads (ab1) by mapping them against a reference sequence. 
+#' 
+#' @details
+#' AB1 reads are read by [sangeranalyseR::SangerRead()] with trimming options specified by \code{trim_args}. Primer sequences are removed by matching primer information with ab1 reads and trimming with [Biostrings::trimLRPatterns()]. Cleaned reads are aligned against reference one-by-one using [DECIPHER::AlignSeqs()]. The alignment is optimized with [DECIPHER::AdjustAlignment()] and the contig is produced by [DECIPHER::ConsensusSequence()].
+#' 
+#' 
+#' @param source_folder Path to the folder containing ab1 files of the reads.
+#' @param contig_name_regex A regex pattern to find ab1 files to be assembled.
+#' @param primers Path to the YAML file, or a \code{data.frame} containing the primer information. The YAML file is structured as follows: 
+#' \preformatted{
+#' primers:
+#'   - name: 18A1mod
+#'     direction: forward
+#'     sequence: CTGGTTGATCCTGCCAGTCATATGC
+#'     spec: forward_start
+#'   ...
+#' }
+#' The four shown properties are required as column if \code{data.frame} is provided. The primers are listed following the order of forward first to forward last, reverse first to reverse last. \code{name} should match the primer names in the ab1 files, \code{direction} decides whether a read will be reverse-complement before mapping, \code{sequence} will be removed from reads, and \code{spec} is a special field with pre-defined keywords: 
+#'   \describe{
+#'     \item{forward_start}{The first primer of the forward strand}
+#'     \item{forward_end}{The last primer of the forward strand}
+#'     \item{reverse_start}{The first primer of the reverse strand}
+#'     \item{reverse_end}{The last primer of the reverse strand}
+#'   }
+#' @param reference A \code{Biostrings::DNAStringSet} class containing the reference sequence, a path to a fasta file containing one sequence, or a NCBI GenBank accession number.
+#' @param output Path to the output folder
+#' @param run_name Character. Run name to be assigned to output files. 
+#' @param trim_args Named list. Arguments to be passed to [sangeranalyseR::SangerRead()].
+#' @param AlignSeqs_args Named list. Arguments to be passed to [DECIPHER::AlignSeqs()].
+#' @param AdjustAlignment_args Named list. Arguments to be passed to [DECIPHER::AdjustAlignment()].
+#' @param ConsensusSequence_args Named list. Arguments to be passed to [DECIPHER::ConsensusSequence()].
+#' @param browse Logical. Whether to open browser showing the alignments. Default to \code{FALSE}
+#' @param no_file Logical. Whether to write assembled contigs into a fasta file. Default to \code{TRUE}
+#' 
+#' @return Assembled contigs in DNAStringSet class. 
+#' 
+#' @export
 assemble_map_reference <- function(
     source_folder,
     contig_name_regex,
@@ -6,12 +48,17 @@ assemble_map_reference <- function(
     reference,
     output,
     run_name = NULL,
-    mothur_args = list(),
+    trim_args = list(),
     AlignSeqs_args = list(),
     AdjustAlignment_args = list(),
     ConsensusSequence_args = list(),
+    output_file = T,
     browse = F
 ) {
+    lifecycle::deprecate_warn(
+        when = "0.0.1.9001",
+        what = "assemble_map_reference()"
+    )
     ab1_paths <- list.files(
         source_folder,
         pattern = "\\.ab1$",
@@ -23,6 +70,7 @@ assemble_map_reference <- function(
         contig = ab1_paths %>% basename() %>% stringr::str_extract(contig_name_regex)
     ) %>% dplyr::group_by(contig)
 
+    # Format primer infos
     if (stringr::str_detect(primers, "\\.yaml$")) {
         primers <- yaml::read_yaml(primers) %>% dplyr::bind_rows()
     } else if (
@@ -31,35 +79,44 @@ assemble_map_reference <- function(
         cli::cli_abort("`primers` must be a yaml containing a list of primers, or a data.frame. Both should contain (yaml: property; data.frame: column) `name`, `direction`, `sequence`, and `spec` values.")
     }
 
-    if (stringr::str_detect(reference, "\\.fasta$")) {
-        reference <- Biostrings::readDNAStringSet(reference)
+    # Format reference
+    if (class(reference) == "character") {
+        if (stringr::str_detect(reference, "\\.fasta$")) { # fasta path
+            reference <- Biostrings::readDNAStringSet(reference)
+            if (length(reference) > 1) {
+                cli::cli_abort("Only one reference sequence allowed.")
+            }
+        } else { # ncbi
+            if (length(reference) > 1) {
+                cli::cli_abort("Only one accession number allowed.")
+            }
+            reference <- .DNAbin2DNAStringSet(ape::read.GenBank(reference)) 
+        }
     } else if (class(reference) != "DNAStringSet") {
-        cli::cli_abort("`reference` must be a Biostrings::DNAStringSet class or a file path to a fasta file.")
+        cli::cli_abort("`reference` must be a Biostrings::DNAStringSet class, a file path to a fasta file, or an NCBI GenBank accession number, not {reference}. {zhutilsr::.say_no(cli::abort)}")
     }
 
-    if (length(reference) > 1) {
-        cli::cli_abort("Only one reference sequence allowed.")
-    }
     names(reference) <- "reference"
 
     contigs <- contig_map %>% 
-        dplyr::group_map(~.assemble_map_reference(ab1_paths = .x$filepath, primers = primers, reference = reference, browse = browse)) %>% 
+        dplyr::group_map(
+            ~.assemble_map_reference(
+                ab1_paths = .x$filepath, 
+                primers = primers, 
+                reference = reference, 
+                browse = browse)
+        ) %>% 
         purrr::reduce(c)
     names(contigs) <- as.character(dplyr::group_keys(contig_map)[[1]])
 
-    dir.create(output)
     output_file <- file.path(output, run_name) %>% sprintf("%s.fasta", .)
-    attempt <- 0
-
-    while (file.exists(output_file)) {
-        resp <- readline(sprintf("Output file `%s` already exists. Overwrite? <y/n>", output))
-        if (resp != "y") {
-            attempt <- attempt + 1
-            output_file <- file.path(output, run_name) %>% sprintf("%s-%d.fasta", ., attempt)
-        }
-    }
-
-    Biostrings::writeXStringSet(contigs, output_file)
+    zhutilsr::.safe_write(
+        contigs, 
+        files = file.path(output, run_name) %>% sprintf("%s.fasta", .), 
+        overwrite_args = list(overwrite = T), 
+        write_func = Biostrings::writeXStringSet
+    )
+    stop()
     cli::cli_alert_success("Contigs are written at `{output_file}`.")
 }
 
@@ -90,7 +147,7 @@ assemble_map_reference <- function(
             )
 
             # B. Extract raw sequence
-            raw_seq <- sangerseqR::primarySeq(sangerseqR::sangerseq(sangerseqRread.abif(file)))
+            raw_seq <- sangerseqR::primarySeq(sangerseqR::sangerseq(sangerseqR::read.abif(file)))
 
             # C. Quality crop
             start_pos <- s_read@QualityReport@trimmedStartPos
@@ -108,7 +165,7 @@ assemble_map_reference <- function(
                     with.Lindels = FALSE
                 )
             } else {
-                cli::cli_alert_warning("No primer or primer sequence was matched for sequence {basename(file)}, no trimming was done, there might be primer sequence remaining.")
+                cli::cli_alert_warning("No primer or primer sequence was matched for sequence {basename(file)}, no primer left-over check or trimming was done, there might be primer sequence remaining.")
             }
 
             # additional 3' trimming for reads covering PCR primers
