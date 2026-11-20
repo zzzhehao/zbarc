@@ -37,13 +37,13 @@ clean_label <- function(fasta_path, noprefix = F){
 
 
 #' Wrapper function for Gblocks
-#' 
-#' @description
+#'
+#' @description 
 #' User-facing wrapper for Gblocks. It automatically formats the output filename 
 #' to avoid Gblocks' quirky \code{.fasta-gb} extension (e.g., rewriting it 
 #' cleanly to \code{_gb.fasta}), executes the alignment trimming, and returns 
 #' the path to the resulting FASTA file.
-#' 
+#'
 #' @param input Path to input FASTA file.
 #' @param output Optional. Custom path for the output FASTA file. If \code{NULL} (default), 
 #'   automatically appends \code{_gb} before the input file's extension.
@@ -75,8 +75,8 @@ gblocks <- function(
     if (is.null(output)) {
         if (grepl("\\.[a-zA-Z0-9]+$", input)) {
             output <- sub("(\\.[a-zA-Z0-9]+)$", "_gb\\1", input)
-    } else {
-        output <- paste0(input, "_gb")
+        } else {
+            output <- paste0(input, "_gb")
         }
     }
     
@@ -131,9 +131,9 @@ gblocks <- function(
     }
     
     b1 <- as.numeric(b1)
-        b2 <- as.numeric(b2)
-
-        if (is.na(b1) || is.na(b2)) {
+    b2 <- as.numeric(b2)
+    
+    if (is.na(b1) || is.na(b2)) {
         stop("Arguments 'b1' and 'b2' must be numeric or 'min'.")
     }
 
@@ -650,133 +650,118 @@ split_concat_alignment <- function(
 #' @seealso [exclude_by_meta()]
 #' @seealso [split_concat_alignment()]
 concatenate_alignment <- function(
-    fasta_path,
-    names.alignments,
-    sequence.map,
-    identifier,
-    accs_col,
-    include_strategy = "all",
-    include_strategy_loci,
-    output_folder,
-    run_name = NULL,
-    exclude_options = NULL
+    fasta_path, names.alignments, sequence.map, identifier, accs_col, 
+    include_strategy = "all", include_strategy_loci, include_by, 
+    output_folder, run_name = NULL, exclude_options = NULL
 ) {
     alignments.ls <- purrr::map(fasta_path, ~ape::read.FASTA(.x))
-
+    
     if (purrr::pluck_depth(exclude_options) == 3) {
-        alignments.ls <- purrr::reduce(
-            exclude_options, 
-            .init = alignments.ls, 
-            .f = \(aln.ls, args){
-                aln.ls %>%
-                    purrr::map(\(aln){
-                        rlang::exec(exclude_by_meta, aln = aln, !!!args)
-                    })
-            }
-        )
-    } else if (purrr::pluck_depth(exclude_options) == 2) {
-        alignments.ls <- alignments.ls %>%
-            purrr::map(\(aln){
-                rlang::exec(exclude_by_meta, aln = aln, !!!exclude_options)
+        alignments.ls <- purrr::reduce(exclude_options, .init = alignments.ls, .f = function(aln.ls, args) {
+            aln.ls %>% purrr::map(function(aln) {
+                rlang::exec(exclude_by_meta, aln = aln, !!!args)
             })
+        })
+    } else if (purrr::pluck_depth(exclude_options) == 2) {
+        alignments.ls <- alignments.ls %>% purrr::map(function(aln) {
+            rlang::exec(exclude_by_meta, aln = aln, !!!exclude_options)
+        })
     }
-
-    bp.alignments <- purrr::map_vec(alignments.ls, \(x){length(x[[1]])})
-
-    # extract sequence name/accession number
+    
+    bp.alignments <- purrr::map_vec(alignments.ls, function(x) length(x[[1]]))
     names.seqs <- purrr::map(alignments.ls, ~names(.x))
     names(names.seqs) <- names.alignments
-
-    # extarct sequence map of interest
-    map.present <- purrr::map_dfr(1:length(names.alignments), \(i){
-        sequence.map %>% 
-            dplyr::filter(.data[[accs_col[i]]] %in% names.seqs[[names.alignments[i]]])
+    
+    map.present <- purrr::map_dfr(1:length(names.alignments), function(i) {
+        sequence.map %>% dplyr::filter(.data[[accs_col[i]]] %in% names.seqs[[names.alignments[i]]])
     }) %>% dplyr::distinct()
-
-    # extract and pair sequences
-    concat.seq.ls <- purrr::map(1:nrow(map.present), \(i){
-        identifier <- map.present[[identifier]][i]
+    
+    concat.seq.ls <- purrr::map(1:nrow(map.present), function(i) {
+        org_label <- map.present[[identifier]][i] # Renamed to prevent shadowing the 'identifier' arg
         
-        seqpair <- purrr::map(1:length(names.alignments), \(gi){
+        seqpair <- purrr::map(1:length(names.alignments), function(gi) {
             accNo <- map.present[[accs_col[gi]]][i]
+            
             if (!is.na(accNo)) {
                 if (!accNo %in% names.seqs[[gi]]) {
-                    # accs No in seq map but not in alignment
-                    seq <- ape::as.DNAbin(list(identifier = rep("N", bp.alignments[gi])))
-                    names(seq) <- identifier
-                    seqs.available <- F
+                  seq <- ape::as.DNAbin(list(identifier = rep("N", bp.alignments[gi])))
+                  names(seq) <- org_label
+                  seqs.available <- FALSE
                 } else {
-                    # accs No in seq map and in alignment
-                    seq <- alignments.ls[[gi]][which(names.seqs[[gi]] == accNo)]
-                    names(seq) <- identifier
-                    seqs.available <- T
+                  seq <- alignments.ls[[gi]][which(names.seqs[[gi]] == accNo)]
+                  names(seq) <- org_label
+                  seqs.available <- TRUE
                 }
             } else {
-                # no accs No in seq map
                 seq <- ape::as.DNAbin(list(identifier = rep("N", bp.alignments[gi])))
-                    names(seq) <- identifier
-                    seqs.available <- F
+                names(seq) <- org_label
+                seqs.available <- FALSE
             }
             return(list(seq = seq, seqs.available = seqs.available))
         })
-
-        seqs.available <- seqpair %>% purrr::map_vec(~.x$seqs.available)
         
-        concat.seq <- seqpair %>% purrr::map(~.x$seq) %>% purrr::map(~ape::as.matrix.DNAbin(.x)) %>% purrr::reduce(~cbind(.x, .y))
+        seqs.available <- seqpair %>% purrr::map_vec(~.x$seqs.available)
+        concat.seq <- seqpair %>% 
+            purrr::map(~.x$seq) %>% 
+            purrr::map(~ape::as.matrix.DNAbin(.x)) %>% 
+            purrr::reduce(~cbind(.x, .y))
+        
         return(list(concat.seq = concat.seq, seqs.available = seqs.available))
     })
-
-    # glue sequence to concatenated alignment
-    concat.alignment <- 
-        do.call(rbind, rlist::list.filter(concat.seq.ls %>% purrr::map(~.x$concat.seq), !is.null(.)))
-
-    # table for sequnce availability for later use
-    concat.seq.comp <- 
-        concat.seq.ls %>% 
-        purrr::map_dfr(\(x){
-            df <- data.frame(x$seqs.available) %>% t() %>% as.data.frame()
-            colnames(df) <- names.alignments
-            rownames(df) <- NULL
-            return(df)
-        }) %>% 
-        dplyr::bind_cols(c_organism_label = map.present$c_organism_label)
-
-
+    
+    concat.alignment <- do.call(rbind, rlist::list.filter(concat.seq.ls %>% purrr::map(~.x$concat.seq), !is.null(.)))
+    
+    # Cleaner construction of the boolean comparison frame
+    concat.seq.comp <- purrr::map_dfr(concat.seq.ls, function(x) {
+        df <- as.data.frame(as.list(x$seqs.available))
+        colnames(df) <- names.alignments
+        return(df)
+    }) %>% dplyr::bind_cols(c_organism_label = map.present[[identifier]])
+    
+    # Filtering logic (using robust TRUE evaluation syntax)
     if (include_strategy == "all") {
-        # include strategy: only those with sequence available in specified columns 
         include.taxa <- concat.seq.comp %>% 
-            dplyr::filter(if_all(all_of(c(include_strategy_loci)), ~. == T))
+            dplyr::filter(dplyr::if_all(dplyr::all_of(include_strategy_loci), ~ .x == TRUE))
     } else if (include_strategy == "any") {
-        # include strategy: only those with sequence available in specified columns 
         include.taxa <- concat.seq.comp %>% 
-            dplyr::filter(if_any(all_of(c(include_strategy_loci)), ~. == T))
+            dplyr::filter(dplyr::if_any(dplyr::all_of(include_strategy_loci), ~ .x == TRUE))
     } else {
-        # include strategy: who's this
-        cli::cli_abort("{.var include_strategy} must be either `all` or `any`, not {include_strategy}.")
+        cli::cli_abort("{.var include_strategy} must be either `all`, `any`, or `when`, not {include_strategy}.")
     }
     
-    # subset alignment
-    concat.alignment <- concat.alignment[dimnames(concat.alignment)[[1]] %in% include.taxa$c_organism_label,]
-
+    # Safety Catch: Trap 0-row matrices gracefully before it crashes downstream functions
+    if (nrow(include.taxa) == 0) {
+        cli::cli_abort(c(
+            "No taxa left after filtering.",
+            "x" = "Your `include_strategy` required {include_strategy_loci}, but no sequences successfully matched between your `sequence.map` and the FASTA headers for this locus."
+        ))
+    }
+    
+    # Bug Fix: Ensure drop = FALSE so 1-row returns don't accidentally coerce into vectors
+    concat.alignment <- concat.alignment[dimnames(concat.alignment)[[1]] %in% include.taxa$c_organism_label, , drop = FALSE]
+    
     if (!is.null(run_name)) {
         concat.path <- file.path(output_folder, paste0("concat_", run_name, ".nexus"))
     } else {
         concat.path <- file.path(output_folder, "concat.nexus")
     }
-    dir.create(concat.path, recursive = T)
+    
+    # Bug Fix: ensure dir.create targets the folder, not the file itself
+    dir.create(dirname(concat.path), recursive = TRUE, showWarnings = FALSE)
+    
     ape::write.FASTA(concat.alignment, concat.path)
-
-    # Re-extract alignment from each locus for model testing
     alnbyhand.path <- split_concat_alignment(concat.alignment, names.alignments, bp.alignments, output_folder)
-
+    
     res <- list(
-        alignment = concat.alignment,
-        concat_fasta_path = concat.path,
-        loci_fasta_path = alnbyhand.path,
-        taxa = dimnames(concat.alignment)[[1]],
-        loci_parition = data.frame(name = names.alignments, length = bp.alignments),
+        alignment = concat.alignment, 
+        concat_fasta_path = concat.path, 
+        loci_fasta_path = alnbyhand.path, 
+        taxa = dimnames(concat.alignment)[[1]], 
+        loci_parition = data.frame(name = names.alignments, length = bp.alignments), 
         sequence_composition = concat.seq.comp %>% dplyr::filter(c_organism_label %in% dimnames(concat.alignment)[[1]])
     )
+    
+    return(res)
 }
 
 summarize_alignment <- function(path){
@@ -815,4 +800,9 @@ merge_fasta <- function(..., output_file, overwrite = FALSE) {
         combined <- combined[!dups]
     }
     ape::write.FASTA(combined, output_file)
+}
+
+#' Converting DNAbin sequence to DNAStringSet object
+.DNAbin2DNAStringSet <- function(DNAbin) {
+    DNAbin %>% as.character %>% lapply(., paste0, collapse = "") %>% unlist %>% Biostrings::DNAStringSet
 }
