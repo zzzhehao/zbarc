@@ -524,6 +524,16 @@ abgd_delim <- function(output_folder, indices, label = NULL) {
 #' @export
 #' @family gmyc
 gmyc_eval <- function(contree, prefix = NULL, method = "both") {
+    ok <- zhutilsr::dependency_check(
+        "splits",
+        install.call = install.packages("splits", repos = "http://R-Forge.R-project.org", type = "source")
+    )
+    if (!isTRUE(all(ok))) {
+        cli::cli_abort(c(
+            "Package {.pkg splits} is required for {.fn gmyc_eval}.",
+            "i" = "Install it from R-Forge via {.code install.packages('splits', repos = 'http://R-Forge.R-project.org', type = 'source')}."
+        ))
+    }
     contree <- ape::read.nexus(contree)
     if (!ape::is.binary(contree) | !ape::is.ultrametric(contree)) {cli::cli_abort("The tree is not binary or ultrametric.")}
     if (method == "both") {method <- c("single", "multiple")}

@@ -1,6 +1,6 @@
 Package: zseq
 Title: Zhehao's Tools for Sequence Handling and Analysis
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: 
     person("Zhehao", "Hu", , "hu_zhehao@hotmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0006-2408-1513"))
@@ -24,9 +24,7 @@ Imports:
     rlang (>= 1.1.6),
     rlist (>= 0.4.6),
     RSQLite (>= 2.3.7),
-    sangeranalyseR (>= 1.23.0),
     sangerseqR (>= 1.46.0),
-    splits (== 1.0-20),
     stringdist (>= 0.9.15),
     stringr (>= 1.5.1),
     tibble (>= 3.3.1),
@@ -38,8 +36,12 @@ Imports:
     yaml (>= 2.3.10),
     zhutilsr (>= 0.0.1),
     lifecycle
+Suggests:
+    splits (== 1.0-20),
+    sangeranalyseR (>= 1.23.0)
 Additional_repositories:
     http://R-Forge.R-project.org
 Remotes: 
     zzzhehao/zhutilsr@dev
 Config/roxygen2/version: 8.1.1.9000
+URL: https://zzzhehao.github.io/zseq/

@@ -46,7 +46,7 @@
 #'   [DECIPHER::BrowseSeqs()]. Default is `FALSE`.
 #' 
 #' @return Assembled contigs as a `Biostrings::DNAStringSet` object (when reaching return).
-#' @export
+#' @noRd
 assemble_map_reference <- function(
     source_folder,
     contig_name_regex,
