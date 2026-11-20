@@ -2,7 +2,7 @@
 % Please edit documentation in R/delim_asap.R
 \name{asap}
 \alias{asap}
-\title{ASAP result}
+\title{ASAP Result S7 Class}
 \usage{
 asap(
   partitions = (function (.data = list(), row.names = NULL) 
@@ -40,6 +40,22 @@ asap(
   dist.mat = NULL
 )
 }
+\arguments{
+\item{partitions}{A \code{data.frame} of all evaluated ASAP partitions.}
+
+\item{best_rank}{An \code{integer} partition rank.}
+
+\item{best_score}{A \code{numeric} ASAP score for the partition.}
+
+\item{best_p}{A \code{numeric} p-value (\code{Proba}) for the partition.}
+
+\item{notu}{An \code{integer} number of delimited subsets/OTUs.}
+
+\item{otu}{A \code{data.frame} mapping specimen \code{identifier} to \code{otu}.}
+
+\item{dist.mat}{A pairwise distance matrix object.}
+}
 \description{
-ASAP result
+An S7 class storing parsed ASAP partition statistics, specimen-to-OTU assignments,
+and pairwise genetic distance matrices.
 }

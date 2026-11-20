@@ -2,22 +2,20 @@
 % Please edit documentation in R/sequence.R
 \name{abgd_read_result}
 \alias{abgd_read_result}
-\title{Read ABGD Result}
+\title{Read a Single ABGD Partition Result File}
 \usage{
 abgd_read_result(path)
 }
+\arguments{
+\item{path}{Character. Path to an ABGD partition text file.}
+}
 \value{
-A data frame of the delimitation result
+A \code{data.frame} (tibble) with columns \code{taxa} (character) and \code{group} (factor).
 }
 \description{
-I extracted the code from \code{{delimtools}} function \code{abgd_tbl} as it just does what this function should. I omit the execution part from that function because it doesn't provide full control of the program, especially the two parameters \code{p} and \code{P} which might be sensitive to datasets, and leaves \code{X} controllable, which should be left as default most of the time except the datasets are very noisy.
+Parses an ABGD partition output file (\code{part*.txt}) into a long-format \code{data.frame} of
+\code{taxa} and \code{group} assignments.
 }
 \seealso{
-\code{\link[=abgd_execute]{abgd_execute()}}
-
-\code{\link[=abgd_read_result_all]{abgd_read_result_all()}}
-
-\code{\link[=abgd_summary]{abgd_summary()}}
-
-\code{\link[=abgd_delim]{abgd_delim()}}
+\code{\link[=abgd_execute]{abgd_execute()}}, \code{\link[=abgd_read_result_all]{abgd_read_result_all()}}, \code{\link[=abgd_summary]{abgd_summary()}}, \code{\link[=abgd_delim]{abgd_delim()}}
 }

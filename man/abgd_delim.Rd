@@ -2,29 +2,25 @@
 % Please edit documentation in R/sequence.R
 \name{abgd_delim}
 \alias{abgd_delim}
-\title{Perform Species Delimitation with ABGD Result}
+\title{Extract Species Delimitation Table from ABGD Recursive Partitions}
 \usage{
 abgd_delim(output_folder, indices, label = NULL)
 }
 \arguments{
-\item{output_folder}{Output folder of the ABGD result.}
+\item{output_folder}{Character. Path to the ABGD output folder.}
 
-\item{indices}{A numerical vector indicating the indices of the partitions to be evaluated.}
+\item{indices}{Numeric or integer vector. Partition indices to extract from recursive partitions.}
 
-\item{label}{A character vector. Name to added to the column name of the output data frame. The length must match with \code{indices}.}
+\item{label}{Character vector or \code{NULL}. Suffix(es) appended to \code{"abgd_"} to name output
+columns; must match \code{length(indices)} when \code{length(indices) > 1}. If \code{NULL} and \code{length(indices) == 1},
+the column is named \code{"abgd"}.}
 }
 \value{
-A data frame of the ABGD result.
+A \code{data.frame} (tibble) with column \code{taxa} and one delimitation column per selected partition.
 }
 \description{
-Perform Species Delimitation with ABGD Result
+Extract Species Delimitation Table from ABGD Recursive Partitions
 }
 \seealso{
-\code{\link[=abgd_execute]{abgd_execute()}}
-
-\code{\link[=abgd_read_result]{abgd_read_result()}}
-
-\code{\link[=abgd_read_result_all]{abgd_read_result_all()}}
-
-\code{\link[=abgd_summary]{abgd_summary()}}
+\code{\link[=abgd_execute]{abgd_execute()}}, \code{\link[=abgd_read_result]{abgd_read_result()}}, \code{\link[=abgd_read_result_all]{abgd_read_result_all()}}, \code{\link[=abgd_summary]{abgd_summary()}}
 }

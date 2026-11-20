@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Reshapes sequence metadata into a wide table linking sequences from the same vouchered
-#' specimen across loci, which can be used as `sequence.map` in [concatenate_alignment()][cite: 9, 12].
+#' specimen across loci, which can be used as `sequence.map` in [concatenate_alignment()].
 #'
 #' @param metadata.sequence A `data.frame` containing sequence-level metadata.
 #' @param col_gene Unquoted column name in `metadata.sequence` identifying the gene/locus.

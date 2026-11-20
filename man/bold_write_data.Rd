@@ -2,10 +2,22 @@
 % Please edit documentation in R/bold.R
 \name{bold_write_data}
 \alias{bold_write_data}
-\title{Write BOLD data to a desired location utilizing zhutilsr}
+\title{Write BOLD Data to Disk Using \code{zhutilsr}}
 \usage{
 bold_write_data(obj, dir = NULL, file = NULL, format = "tsv")
 }
+\arguments{
+\item{obj}{Object (typically a \code{data.frame}) to write to disk.}
+
+\item{dir}{Character or \code{NULL}. Target directory path.}
+
+\item{file}{Character or \code{NULL}. Target file name or file path.}
+
+\item{format}{Character. Output format (\code{"tsv"}, \code{"dwc"}, or \code{"json"}). Default is \code{"tsv"}.}
+}
+\value{
+Result of \code{zhutilsr::safe_write()}.
+}
 \description{
-Write BOLD data to a desired location utilizing zhutilsr
+Write BOLD Data to Disk Using \code{zhutilsr}
 }

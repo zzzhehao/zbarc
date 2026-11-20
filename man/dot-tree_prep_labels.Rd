@@ -7,14 +7,14 @@
 .tree_prep_labels(tree, format.taxa = TRUE)
 }
 \arguments{
-\item{tree}{A tidytree treedata object.}
+\item{tree}{A \code{tidytree} \code{treedata} object.}
 
-\item{format.taxa}{Logical. Should taxa names be formatted for plotmath? Default to TRUE.}
+\item{format.taxa}{Logical. Whether to format taxa names for plotmath. Default is \code{TRUE}.}
 }
 \value{
-A rescaled (and optionally formatted) tidytree object.
+A rescaled (and optionally formatted) \code{treedata} object.
 }
 \description{
-Internal function to rescale tree branch lengths to \code{length_mean} and
-optionally format tip labels using \code{zhutilsr::format_organism_name}.
+Rescales tree branch lengths to \code{"length_mean"} and optionally formats tip labels using
+\code{zhutilsr::format_organism_name()} with spaces converted to tildes (\code{~}) for plotmath.
 }

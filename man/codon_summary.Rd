@@ -2,10 +2,20 @@
 % Please edit documentation in R/sequence_alignment.R
 \name{codon_summary}
 \alias{codon_summary}
-\title{Check stop codon and reading frame in protein coding gene alignment}
+\title{Check Stop Codons and Reading Frames in a Protein-Coding Alignment}
 \usage{
 codon_summary(aln, code, verbose = T)
 }
+\arguments{
+\item{aln}{A named \code{DNAbin} alignment object.}
+
+\item{code}{Integer or character. Genetic code passed to \code{code} in \code{\link[ape:trans]{ape::trans()}}.}
+
+\item{verbose}{Logical. Whether to print status messages via \code{cli}. Default is \code{TRUE}.}
+}
+\value{
+Invisibly returns a named list with elements \code{raw}, \code{tbl}, and \code{result}.
+}
 \description{
-Check stop codon and reading frame in protein coding gene alignment
+Check Stop Codons and Reading Frames in a Protein-Coding Alignment
 }

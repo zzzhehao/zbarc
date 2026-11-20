@@ -2,20 +2,22 @@
 % Please edit documentation in R/delim_asap.R
 \name{asap_evaluate}
 \alias{asap_evaluate}
-\title{Evaluates ASAP output}
+\title{Evaluate ASAP Output}
 \usage{
 asap_evaluate(dir, part = 3, smart_filter = TRUE)
 }
 \arguments{
-\item{dir}{A path to ASAP result directory.}
+\item{dir}{Character. Path to an ASAP result directory.}
 
-\item{part}{Integer. Number of the best partitions to evaluate. Default to 3.}
+\item{part}{Integer. Number of top partitions to evaluate. Default is \code{3}.}
 
-\item{smart_filter}{Logical. If TRUE, filters out duplicate partitions with the same number of groups, keeping only the one with the best p-value. Default to TRUE.}
+\item{smart_filter}{Logical. If \code{TRUE}, filters partitions by group count (\code{NbSubset}) keeping
+the lowest \code{p.val} per group size before ranking by \code{Asap.score}. If \code{FALSE}, takes the top
+distinct \code{Asap.score} values directly. Default is \code{TRUE}.}
 }
 \value{
-A list of \link{asap} class objects length of \code{part}.
+A list of \link{asap} S7 objects of length \code{part}.
 }
 \description{
-Evaluates ASAP output
+Evaluate ASAP Output
 }

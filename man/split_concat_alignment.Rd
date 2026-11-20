@@ -2,21 +2,25 @@
 % Please edit documentation in R/sequence.R
 \name{split_concat_alignment}
 \alias{split_concat_alignment}
-\title{Split Concatenated Alignment Back into Single-locus Alignment}
+\title{Split a Concatenated Alignment Back into Single-Locus FASTA Files}
 \usage{
 split_concat_alignment(alignment, loci_name, loci_length, output_folder)
 }
 \arguments{
-\item{alignment}{Concatenated alignment}
+\item{alignment}{A \code{DNAbin} alignment matrix.}
 
-\item{loci_name}{Names of the loci}
+\item{loci_name}{Character vector. Names of each locus.}
 
-\item{loci_length}{Lengths of each loci}
+\item{loci_length}{Numeric or integer vector. Column length of each locus in \code{alignment}.}
 
-\item{output_folder}{Output folder}
+\item{output_folder}{Character. Directory where re-extracted FASTA files are written.}
+}
+\value{
+Character vector of output FASTA file paths.
 }
 \description{
-Why should I do this? You might ask. Well, to get the actual sequences of each locus used in subsequent analysis to perform the model test.
+Slices a concatenated \code{DNAbin} alignment matrix by locus lengths, drops taxa that are
+completely missing/ambiguous in a given locus, and writes \verb{reextracted_<locus>.fasta} files.
 }
 \seealso{
 \code{\link[=concatenate_alignment]{concatenate_alignment()}}

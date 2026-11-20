@@ -2,7 +2,7 @@
 % Please edit documentation in R/tree_handler.R
 \name{midwayTreeViz}
 \alias{midwayTreeViz}
-\title{Snapshot the MrBayes Result During the Analysis}
+\title{Snapshot MrBayes Consensus Tree During an Active Analysis}
 \usage{
 midwayTreeViz(
   assets_path,
@@ -13,19 +13,24 @@ midwayTreeViz(
 )
 }
 \arguments{
-\item{outgroup}{Sequence labels of the outgroup sequences. It will use automatic gap detection to find the sequences so it allows a certain degree of ambiguity in the name.}
+\item{assets_path}{Character. Path to the directory containing active MrBayes output files.}
 
-\item{subfolder}{Subfolder where the MrBayes process is located under the asset folder of the date. This is a project-specific data structure adaptation. It just simplifies the location of the target files.}
+\item{outgroup}{Character. Outgroup taxon label used with automatic gap detection on string
+distances to root the preview tree.}
 
-\item{treeviz}{logical. Whether to visualize the tree. Default to TRUE.}
+\item{subfolder}{Character. Subfolder name (currently unused in path construction). Default is \code{""}.}
 
-\item{xlim.factor}{Factor to expand the x-axis of the tree. Increase this value if long labels are omitted because they exceed the plotting area.}
+\item{treeviz}{Logical. Whether to root, rescale, and plot the consensus tree with \code{ggtree}.
+If \code{FALSE}, returns the parsed \code{treedata} object directly. Default is \code{TRUE}.}
 
-\item{assets_date}{Date of the asset folder where the MrBayes analysis process is located in. This is a project-specific data structure adaptation. It just simplifies the location of the target files.}
+\item{xlim.factor}{Numeric. Multiplier applied to \code{xmax} to expand the x-axis for tip labels.
+Default is \code{1.6}.}
 }
 \value{
-A ggplot of visualized tree if \code{treeviz} is set to TRUE. A tidytree "treedata" class object if \code{treeviz} is set to FALSE.
+A \code{ggplot}/\code{ggtree} object if \code{treeviz = TRUE}, or a \code{tidytree} \code{treedata} object if \code{treeviz = FALSE}.
 }
 \description{
-This function allows a visualization of a consensus tree with currently sampled tree without stopping the MrBayes process.
+Copies ongoing MrBayes \code{.p}, \code{.t}, and NEXUS files into a temporary preview subfolder,
+strips \code{mcmc} commands and appends \code{end;} to tree files so a consensus tree can be
+generated interactively without interrupting the running MrBayes process.
 }

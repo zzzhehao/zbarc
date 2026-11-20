@@ -2,16 +2,20 @@
 % Please edit documentation in R/sequence_alignment.R
 \name{polish_alignment}
 \alias{polish_alignment}
-\title{Polish alignment}
+\title{Polish Sequence Alignment}
 \usage{
 polish_alignment(aln, verbose = T)
 }
 \arguments{
-\item{aln}{DNAbin class object. Alignment to polish.}
+\item{aln}{A \code{DNAbin} alignment object.}
+
+\item{verbose}{Logical. Whether to print status messages via \code{cli}. Default is \code{TRUE}.}
 }
 \value{
-DNAbin class object. Polished alignment.
+A \code{DNAbin} object containing the polished alignment.
 }
 \description{
-This function is deprecated.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+Deprecated in version \verb{0.0.1.9001} because alignment polishing in DNA barcoding is better
+performed manually with visual inspection.
 }

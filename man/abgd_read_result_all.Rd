@@ -2,22 +2,21 @@
 % Please edit documentation in R/sequence.R
 \name{abgd_read_result_all}
 \alias{abgd_read_result_all}
-\title{Read All ABGD Partition Results}
+\title{Read All ABGD Partition Results in a Directory}
 \usage{
 abgd_read_result_all(output_folder)
 }
+\arguments{
+\item{output_folder}{Character. Path to the ABGD output directory.}
+}
 \value{
-A named list of summary for all partitions
+A list of lists containing \code{path}, \code{partition_type}, \code{index}, \code{group_count}, and \code{result}
+for each partition file.
 }
 \description{
-A bulk loading version of \code{abgd_read_result}.
+Loads all initial and recursive ABGD partition files in \code{output_folder} along with metadata
+such as partition type, index, and group count.
 }
 \seealso{
-\code{\link[=abgd_execute]{abgd_execute()}}
-
-\code{\link[=abgd_read_result]{abgd_read_result()}}
-
-\code{\link[=abgd_summary]{abgd_summary()}}
-
-\code{\link[=abgd_delim]{abgd_delim()}}
+\code{\link[=abgd_execute]{abgd_execute()}}, \code{\link[=abgd_read_result]{abgd_read_result()}}, \code{\link[=abgd_summary]{abgd_summary()}}, \code{\link[=abgd_delim]{abgd_delim()}}
 }

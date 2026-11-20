@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{abgd_execute}
 \alias{abgd_execute}
-\title{Perform Automatic Barcoding Gap Detection (ABGD)}
+\title{Run Automatic Barcoding Gap Discovery (ABGD)}
 \usage{
 abgd_execute(
   alignment,
@@ -19,36 +19,36 @@ abgd_execute(
 )
 }
 \arguments{
-\item{alignment}{Path to the FASTA file.}
+\item{alignment}{Character. Path to the input FASTA alignment file.}
 
-\item{exe}{Path to the ABGD executable.}
+\item{exe}{Character. Path to the ABGD executable.}
 
-\item{output_folder}{Path to output folder.}
+\item{output_folder}{Character or \code{NULL}. Output directory path. Defaults to \code{file.path(dirname(alignment), "ABGD")}.}
 
-\item{p}{Minimal a priori value (Pmin, default to 0.001).}
+\item{a}{Logical. Whether to pass \code{-a} to ABGD. Default is \code{TRUE}.}
 
-\item{P}{Maximal a priori value (Pmax, default to 0.1).}
+\item{p}{Numeric. Minimum a priori intraspecific divergence (\code{Pmin}). Default is \code{0.001}.}
 
-\item{n}{Number of steps in [Pmin, Pmax] (default to 20)}
+\item{P}{Numeric. Maximum a priori intraspecific divergence (\code{Pmax}). Default is \code{0.1}.}
 
-\item{d}{Distance to use (0: Kimura-2P, 1: Jukes-Cantor, 2: Tamura-Nei, 3:simple distance; default to 3).}
+\item{n}{Integer. Number of steps in \verb{[Pmin, Pmax]}. Default is \code{20}.}
 
-\item{X}{Mininmum Slope Increase (default to 1.5)}
+\item{d}{Integer. Genetic distance option: \code{0} = Kimura-2P, \code{1} = Jukes-Cantor, \code{2} = Tamura-Nei,
+\code{3} = simple p-distance. Default is \code{3}.}
 
-\item{overwrite}{Logical. Whether to overwrite the output folder when it alreay exists and there are files in it.}
+\item{X}{Numeric. Minimum relative gap width / slope increase (\code{X}). Default is \code{1.5}.}
+
+\item{args}{Character or \code{NULL}. Additional CLI arguments passed to ABGD. Default is \code{NULL}.}
+
+\item{overwrite}{Logical. Whether to overwrite \code{output_folder} if it already contains files.
+Default is \code{FALSE}.}
 }
 \value{
-The output folder where ABGD CLI program will export the result
+Character path to \code{output_folder}.
 }
 \description{
-Perform Automatic Barcoding Gap Detection (ABGD)
+Run Automatic Barcoding Gap Discovery (ABGD)
 }
 \seealso{
-\code{\link[=abgd_read_result]{abgd_read_result()}}
-
-\code{\link[=abgd_read_result_all]{abgd_read_result_all()}}
-
-\code{\link[=abgd_summary]{abgd_summary()}}
-
-\code{\link[=abgd_delim]{abgd_delim()}}
+\code{\link[=abgd_read_result]{abgd_read_result()}}, \code{\link[=abgd_read_result_all]{abgd_read_result_all()}}, \code{\link[=abgd_summary]{abgd_summary()}}, \code{\link[=abgd_delim]{abgd_delim()}}
 }

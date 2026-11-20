@@ -2,7 +2,7 @@
 % Please edit documentation in R/bold.R
 \name{bold_retrieve}
 \alias{bold_retrieve}
-\title{Overarching wrapper for BOLD API data retrieval}
+\title{Retrieve Data from the BOLD API}
 \usage{
 bold_retrieve(
   query,
@@ -14,16 +14,24 @@ bold_retrieve(
 )
 }
 \arguments{
-\item{query}{Search terms in scope:term format (e.g. "tax:Aves;geo:Argentina")}
+\item{query}{Character. Search terms in \code{scope:term} format (e.g., \code{"tax:Aves;geo:Argentina"}).}
 
-\item{format}{Desired format ("tsv", "dwc", or "json")}
+\item{format}{Character. Desired data format (\code{"tsv"}, \code{"dwc"}, or \code{"json"}). Default is \code{"tsv"}.}
 
-\item{extent}{Extent parameter (default "full")}
+\item{extent}{Character. Extent parameter passed to \code{\link[=bold_get_token]{bold_get_token()}}. Default is \code{"full"}.}
 
-\item{output_dir}{Target directory to write files. If NULL, data is only returned to the R environment.}
+\item{output_dir}{Character or \code{NULL}. Target directory to write files. If \code{NULL}, data is only
+returned to the R environment.}
 
-\item{output_file}{Target file name.}
+\item{output_file}{Character or \code{NULL}. Target file name or path when saving to disk.}
+
+\item{max_chars}{Integer. Maximum character length per query chunk. Default is \code{240}.}
+}
+\value{
+A combined \code{data.frame} of retrieved BOLD records, or \code{NULL} if no records were retrieved.
 }
 \description{
-Overarching wrapper for BOLD API data retrieval
+High-level wrapper that chunks long query strings, validates terms via \code{\link[=bold_validate_query]{bold_validate_query()}},
+requests a token via \code{\link[=bold_get_token]{bold_get_token()}}, downloads records via \code{\link[=bold_download]{bold_download()}}, parses them
+via \code{\link[=bold_read_data]{bold_read_data()}}, and optionally writes them to disk via \code{\link[=bold_write_data]{bold_write_data()}}.
 }

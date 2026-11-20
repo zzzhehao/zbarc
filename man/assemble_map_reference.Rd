@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence_assembler.R
 \name{assemble_map_reference}
 \alias{assemble_map_reference}
-\title{Assemble contigs by mapping sanger sequencing reads to a reference sequence}
+\title{Assemble Contigs by Mapping Sanger Sequencing Reads to a Reference Sequence}
 \usage{
 assemble_map_reference(
   source_folder,
@@ -20,11 +20,12 @@ assemble_map_reference(
 )
 }
 \arguments{
-\item{source_folder}{Path to the folder containing ab1 files of the reads.}
+\item{source_folder}{Character. Path to the folder containing \code{.ab1} read files.}
 
-\item{contig_name_regex}{A regex pattern to find ab1 files to be assembled.}
+\item{contig_name_regex}{Character. Regular expression used to extract contig names from \code{.ab1} filenames.}
 
-\item{primers}{Path to the YAML file, or a \code{data.frame} containing the primer information. The YAML file is structured as follows:
+\item{primers}{Character or \code{data.frame}. Path to a YAML file or a \code{data.frame} containing primer
+metadata. A YAML file should be structured as:
 \preformatted{
 primers:
   - name: 18A1mod
@@ -33,41 +34,48 @@ primers:
     spec: forward_start
   ...
 }
-The four shown properties are required as column if \code{data.frame} is provided. The primers are listed following the order of forward first to forward last, reverse first to reverse last. \code{name} should match the primer names in the ab1 files, \code{direction} decides whether a read will be reverse-complement before mapping, \code{sequence} will be removed from reads, and \code{spec} is a special field with pre-defined keywords:
+If a \code{data.frame} is supplied, it must contain columns \code{name}, \code{direction}, \code{sequence}, and \code{spec}.
+Allowed \code{spec} values include:
 \describe{
-\item{forward_start}{The first primer of the forward strand}
-\item{forward_end}{The last primer of the forward strand}
-\item{reverse_start}{The first primer of the reverse strand}
-\item{reverse_end}{The last primer of the reverse strand}
+\item{\code{forward_start}}{First primer of the forward strand.}
+\item{\code{forward_end}}{Last primer of the forward strand.}
+\item{\code{reverse_start}}{First primer of the reverse strand.}
+\item{\code{reverse_end}}{Last primer of the reverse strand.}
 }}
 
-\item{reference}{A \code{Biostrings::DNAStringSet} class containing the reference sequence, a path to a fasta file containing one sequence, or a NCBI GenBank accession number.}
+\item{reference}{A \code{Biostrings::DNAStringSet} of length 1, a path to a single-sequence FASTA file,
+or a single NCBI GenBank accession number.}
 
-\item{output}{Path to the output folder}
+\item{output}{Character. Path to the output directory.}
 
-\item{run_name}{Character. Run name to be assigned to output files.}
+\item{run_name}{Character or \code{NULL}. Base name assigned to the output FASTA file.}
 
-\item{trim_args}{Named list. Arguments to be passed to \code{\link[sangeranalyseR:SangerRead]{sangeranalyseR::SangerRead()}}.}
+\item{trim_args}{Named list. Additional trimming arguments (currently passed to wrapper). Default is \code{list()}.}
 
-\item{AlignSeqs_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}.}
+\item{AlignSeqs_args}{Named list. Additional alignment arguments. Default is \code{list()}.}
 
-\item{AdjustAlignment_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:AdjustAlignment]{DECIPHER::AdjustAlignment()}}.}
+\item{AdjustAlignment_args}{Named list. Additional alignment adjustment arguments. Default is \code{list()}.}
 
-\item{ConsensusSequence_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:ConsensusSequence]{DECIPHER::ConsensusSequence()}}.}
+\item{ConsensusSequence_args}{Named list. Additional consensus arguments. Default is \code{list()}.}
 
-\item{browse}{Logical. Whether to open browser showing the alignments. Default to \code{FALSE}}
+\item{output_file}{Logical. Whether to write output files. Default is \code{TRUE}.}
 
-\item{no_file}{Logical. Whether to write assembled contigs into a fasta file. Default to \code{TRUE}}
+\item{browse}{Logical. Whether to open interactive alignment/contig views in a browser via
+\code{\link[DECIPHER:BrowseSeqs]{DECIPHER::BrowseSeqs()}}. Default is \code{FALSE}.}
 }
 \value{
-Assembled contigs in DNAStringSet class.
+Assembled contigs as a \code{Biostrings::DNAStringSet} object (when reaching return).
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
-This function is deprecated in version 0.0.1.9001 and will be removed in a future update.
+This function is deprecated in version \verb{0.0.1.9001} and will be removed in a future update.
 
-Assemble a set of sanger sequencing reads (ab1) by mapping them against a reference sequence.
+Assembles Sanger sequencing reads (\code{.ab1}) by quality-trimming, primer-trimming, aligning
+against a reference sequence, and building consensus contigs.
 }
 \details{
-AB1 reads are read by \code{\link[sangeranalyseR:SangerRead]{sangeranalyseR::SangerRead()}} with trimming options specified by \code{trim_args}. Primer sequences are removed by matching primer information with ab1 reads and trimming with \code{\link[Biostrings:trimLRPatterns]{Biostrings::trimLRPatterns()}}. Cleaned reads are aligned against reference one-by-one using \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}. The alignment is optimized with \code{\link[DECIPHER:AdjustAlignment]{DECIPHER::AdjustAlignment()}} and the contig is produced by \code{\link[DECIPHER:ConsensusSequence]{DECIPHER::ConsensusSequence()}}.
+AB1 reads are inspected with \code{\link[sangeranalyseR:SangerRead]{sangeranalyseR::SangerRead()}} and cropped from raw traces
+read via \code{sangerseqR}. Primer sequences are trimmed using \code{\link[Biostrings:trimLRPatterns]{Biostrings::trimLRPatterns()}},
+aligned with \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}, refined with \code{\link[DECIPHER:AdjustAlignment]{DECIPHER::AdjustAlignment()}}, and
+summarized into consensus sequences with \code{\link[DECIPHER:ConsensusSequence]{DECIPHER::ConsensusSequence()}}.
 }

@@ -7,18 +7,18 @@
 .tree_calc_offsets(tree, offset = 0.01, width = 0.1, label_margin = 0.02)
 }
 \arguments{
-\item{tree}{A tidytree treedata object.}
+\item{tree}{A \code{tidytree} \code{treedata} object.}
 
-\item{offset}{Numeric. Space between tree tips and heatmap.}
+\item{offset}{Numeric. Gap between tree tips and the heatmap. Default is \code{0.01}.}
 
-\item{width}{Numeric. Heatmap width as a proportion of tree width.}
+\item{width}{Numeric. Heatmap width as a proportion of \code{tree_width}. Default is \code{0.1}.}
 
-\item{label_margin}{Numeric. Space between heatmap and text.}
+\item{label_margin}{Numeric. Space between the heatmap and tip labels. Default is \code{0.02}.}
 }
 \value{
-A list containing \code{tree_width} and \code{label_push}.
+A named list with elements \code{tree_width} and \code{label_push}.
 }
 \description{
-Computes the maximum tree width and determines the exact horizontal push
-(\code{nudge_x}) required to place tip labels neatly outside a heatmap layer.
+Computes the maximum tree width and determines the horizontal push (\code{nudge_x})
+needed to place tip labels outside a heatmap layer.
 }

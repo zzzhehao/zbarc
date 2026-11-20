@@ -2,7 +2,7 @@
 % Please edit documentation in R/report.R
 \name{render_report}
 \alias{render_report}
-\title{Generate an Interactive BLAST Report}
+\title{Generate an Interactive HTML Report Using Quarto}
 \usage{
 render_report(
   input,
@@ -12,17 +12,20 @@ render_report(
 )
 }
 \arguments{
-\item{input}{A character vector of paths to input files.}
+\item{input}{Character vector. Path(s) to input file(s) passed to the Quarto template's
+\code{input} parameter.}
 
-\item{output_file}{The path where the final HTML report should be saved.}
+\item{output_file}{Character. Path where the final HTML report should be saved.}
 
-\item{report_type}{Type of report to render. Currently support \code{ncbi} and \code{bold}. \code{ncbi} takes single-json file from NCBI BLAST result; \code{bold} takes jsonl file from BOLD Barcode ID result.}
+\item{report_type}{Character. Type of report to render: \code{"ncbi"} (\code{ncbi_blast_report.qmd}),
+\code{"bold"} (\code{bold_barcodeid_report.qmd}), or \code{"distance"} (\code{genetic_distance_report.qmd}).}
 
-\item{description}{A string representing the name/title of the run.}
+\item{description}{Character. Title or run description passed to the Quarto template.
+Defaults to \code{as.character(Sys.Date())} when omitted.}
 }
 \value{
-The absolute path to the generated HTML file, invisibly.
+Invisibly returns the normalized path to the generated HTML file.
 }
 \description{
-Generate an Interactive BLAST Report
+Generate an Interactive HTML Report Using Quarto
 }

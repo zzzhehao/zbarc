@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{exclude_by_meta}
 \alias{exclude_by_meta}
-\title{Exclude Sequences from Alignment by Filtering on Metadata}
+\title{Exclude Sequences from an Alignment by Filtering Metadata}
 \usage{
 exclude_by_meta(
   aln,
@@ -14,21 +14,24 @@ exclude_by_meta(
 )
 }
 \arguments{
-\item{aln}{Alignment in DNAbin}
+\item{aln}{A named \code{DNAbin} alignment object.}
 
-\item{field}{Character. Field (column) in metadata to apply the filter}
+\item{field}{Character. Column name in \code{metadata} to match against \code{pattern}.}
 
-\item{pattern}{Character. Regex pattern to look for. Matching result will be excluded.}
+\item{pattern}{Character. Regular expression pattern; matching records are selected for exclusion.}
 
-\item{retain}{Numeric. Number of sequence to randomly exclude from exclusion (i.e. retain). Useful when excluding a group with large amount of sequence but keeping them represented in alignment. If bigger than number of sequences matching filtering criteria, no sequence will be excluded.}
+\item{retain}{Numeric or integer. Number of matching sequences to randomly retain rather than
+exclude. Default is \code{0}.}
 
-\item{seed}{Will be passed to \link{set.seed}. Controls random selection of sequences when \code{retain} is not 0.}
+\item{seed}{Integer or \code{NULL}. Optional random seed passed to \code{\link[=set.seed]{set.seed()}} when \code{retain != 0}.}
 
-\item{metadata}{A data frame. The metadata. Must incldue column given in \code{field}}
+\item{metadata}{A \code{data.frame} containing \code{INSDSeq_primary-accession} and \code{field}. Defaults to
+\code{zhutilsr::db_pull("metadata.Sequence.NCBI", silent = T)}.}
 }
 \value{
-An alignment in DNAbin
+A filtered \code{DNAbin} alignment object.
 }
 \description{
-Known issue: this function only filter the sequence based on single filtering criteria. For complex filter, take the source code and write for yourself.
+Filters sequences in a \code{DNAbin} object whose \code{INSDSeq_primary-accession} matches metadata rows
+matching \code{pattern} in \code{field}, optionally retaining a random subset of matched sequences.
 }

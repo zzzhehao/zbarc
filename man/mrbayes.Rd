@@ -9,7 +9,7 @@
 \alias{mrbayes_sum_cmd}
 \alias{mrbayes_block}
 \alias{mrbayes-args}
-\title{Helper Functions to Generate MrBayes Block in Nexus}
+\title{Helper Functions to Generate MrBayes Blocks in NEXUS Files}
 \usage{
 mrbayes_mcmc_cmd(gen = 1e+07, nchains = 4, nruns = 4, stopval = 0.01, ...)
 
@@ -24,41 +24,46 @@ mrbayes_sum_cmd(..., cmd)
 mrbayes_block(...)
 }
 \arguments{
-\item{gen}{Number of MCMC generations}
+\item{gen}{Numeric or integer. Number of MCMC generations (\code{ngen}). Default is \code{10000000}.}
 
-\item{nchains}{Number of MCMC chains}
+\item{nchains}{Integer. Number of MCMC chains. Default is \code{4}.}
 
-\item{nruns}{Number of parallel runs}
+\item{nruns}{Integer. Number of parallel runs. Default is \code{4}.}
 
-\item{stopval}{Threshold value to stop the run}
+\item{stopval}{Numeric. Convergence threshold (\code{stopval}) when \code{stoprule = "yes"}. Default is \code{0.01}.}
 
 \item{...}{Additional arguments. \describe{
-\item{\link{mrbayes_mcmc_cmd}}{Further parameters to put in mcmc command}
-\item{\link{mrbayes_lset_cmd}}{Further parameters to put in lset command}
-\item{\link{mrbayes_prset_cmd}}{Further parameters to put in prset command}
-\item{\link{mrbayes_sum_cmd}}{Further parameters to put in sumt or sump command, when given, \code{cmd} must also be provided to specify whether sumt or sump is being generated}
-\item{\link{mrbayes_block}}{Commands to be included in the MrBayes block}
+\item{\code{\link[=mrbayes_mcmc_cmd]{mrbayes_mcmc_cmd()}}}{Further parameters to include in the \code{mcmc} command.}
+\item{\code{\link[=mrbayes_lset_cmd]{mrbayes_lset_cmd()}}}{Further parameters to include in the \code{lset} command.}
+\item{\code{\link[=mrbayes_prset_cmd]{mrbayes_prset_cmd()}}}{Further parameters to include in the \code{prset} command.}
+\item{\code{\link[=mrbayes_sum_cmd]{mrbayes_sum_cmd()}}}{Further parameters to include in \code{sumt} or \code{sump}; \code{cmd} must also be provided to specify \code{"sumt"} or \code{"sump"}.}
+\item{\code{\link[=mrbayes_block]{mrbayes_block()}}}{Commands to include inside the \code{MrBayes} block.}
 }}
 
-\item{loci_length}{A numeric vector. Length of each locus.}
+\item{loci_length}{Numeric vector. Length of each locus.}
 
-\item{loci_name}{A character vector. Name of each locus.}
+\item{loci_name}{Character vector. Name of each locus.}
 
-\item{protein_coding_loci}{A character vector of the names of the protein coding locus. The locus will be partitioned further based on codon position to allow different substitution rate at each position.}
+\item{protein_coding_loci}{Character vector. Names of protein-coding loci to partition further by
+codon position (\verb{_pos1}, \verb{_pos2}, \verb{_pos3}).}
 
-\item{nst}{Value passed to \code{lset nst}}
+\item{nst}{Numeric or integer. Value passed to \verb{lset nst}.}
 
-\item{rates}{Value passed to \code{lset rates}}
+\item{rates}{Character. Value passed to \verb{lset rates}.}
 
-\item{applyto}{A numeric vector, indicating the index of the partition to apply the \code{lset} settings to. Default to \code{NULL}, which applies to the whole alignment.}
+\item{applyto}{Numeric vector or \code{NULL}. Partition indices to apply \code{lset} settings to.
+Default is \code{NULL} (applies to the whole alignment).}
 
-\item{cmd}{Either \code{"sump"} or \code{"sumt"}, indicating the generating command. Will be ignored when \code{...} is missing.}
+\item{cmd}{Character. Either \code{"sump"} or \code{"sumt"} when \code{...} arguments are supplied.}
 }
 \value{
-A character string.
+A character string containing formatted MrBayes command(s).
 }
 \description{
-These functions help generate MrBayes command to put in nexus block that can be written with the alignment together. \code{mrbayes_mcmc_cmd}, \code{mrbayes_partition_cmd}, \code{mrbayes_lset_cmd}, \code{mrbayes_prset_cmd}, \code{mrbayes_sum_cmd} produce individual part of the command. Their output can be passed into \code{mrbayes_block} to package them as a complete nexus block. Also see \code{\link[=prepare_mrbayes_nexus]{prepare_mrbayes_nexus()}} for a more powerful wrapper.
+Generates MrBayes command strings for inclusion in a NEXUS \code{MrBayes} block.
+\code{mrbayes_mcmc_cmd()}, \code{mrbayes_partition_cmd()}, \code{mrbayes_lset_cmd()}, \code{mrbayes_prset_cmd()},
+and \code{mrbayes_sum_cmd()} construct individual commands, while \code{mrbayes_block()} wraps them in a
+\verb{BEGIN MrBayes; ... END;} block. See also \code{\link[=prepare_mrbayes_nexus]{prepare_mrbayes_nexus()}} for an end-to-end wrapper.
 }
 \seealso{
 \code{\link[=prepare_mrbayes_nexus]{prepare_mrbayes_nexus()}}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{concatenate_alignment}
 \alias{concatenate_alignment}
-\title{Concatenate Multiple Alignment into Multi-locus Alignment}
+\title{Concatenate Multiple Single-Locus Alignments into a Multi-Locus Alignment}
 \usage{
 concatenate_alignment(
   fasta_path,
@@ -19,38 +19,47 @@ concatenate_alignment(
 )
 }
 \arguments{
-\item{fasta_path}{A character vector of path to the fasta file of each individual alignment. The order of the path indicates their order in the alignment.}
+\item{fasta_path}{Character vector. Paths to single-locus FASTA alignment files in concatenation order.}
 
-\item{sequence.map}{A data frame to map sequences to individuals. Must have columns specified in \code{identifier} and \code{accs_col}}
+\item{names.alignments}{Character vector. Locus names matching \code{fasta_path} in length and order.}
 
-\item{identifier}{Character. Name of the column in \code{sequence.map} corresponds to the organism's ID.}
+\item{sequence.map}{A \code{data.frame} mapping sequence/accession IDs to organism identifiers.}
 
-\item{accs_col}{A character vector. Names of the column in \code{sequence.map} where accession numbers or sequence names of each organism are stored. Sequence names in the alignment of \code{fasta_path} will be matched against these.}
+\item{identifier}{Character. Column name in \code{sequence.map} providing the organism/taxon label.}
 
-\item{include_strategy}{Either to only include taxa that has \code{all} sequences in the loci specified in \code{include_strategy_loci}, or taxa that has sequence in \code{any} of the loci.}
+\item{accs_col}{Character vector. Column names in \code{sequence.map} (one per locus) holding
+accession numbers or sequence names to match against FASTA headers.}
 
-\item{include_strategy_loci}{Names of the loci used to check whether a taxa should be included or not.}
+\item{include_strategy}{Character. Taxon inclusion rule across \code{include_strategy_loci}: \code{"all"}
+(default) or \code{"any"}.}
 
-\item{output_folder}{A path to the output folder.}
+\item{include_strategy_loci}{Character vector. Locus names checked under \code{include_strategy}.}
 
-\item{exclude_options}{A list of arguments passed to \code{\link[=exclude_by_meta]{exclude_by_meta()}}, except the first argument. Will used to exclude sequences. A list of the argument list can be provided to perform multiple steps of filtering.}
+\item{include_by}{Argument accepted in signature (currently unused in function body).}
 
-\item{names.alignment}{A character vector. Name of the loci. Must have the same length as \code{fasta_path}.}
+\item{output_folder}{Character. Directory for output alignment files.}
+
+\item{run_name}{Character or \code{NULL}. Optional suffix used in output filename (\verb{concat_<run_name>.nexus}).}
+
+\item{exclude_options}{List or \code{NULL}. Argument list (excluding \code{aln}) passed to \code{\link[=exclude_by_meta]{exclude_by_meta()}},
+or a list of argument lists for sequential filtering steps. Default is \code{NULL}.}
 }
 \value{
-Concatenated alignment will be written into a fasta file. The function returns a named list with information of the concatenated alignment: \describe{
-\item{\code{alignment}}{The acutal concatenated alignment object.}
-\item{\code{concat_fasta_path}}{Path to the concatenated alignment file}
-\item{\code{loci_fasta_path}}{Path to the fasta file of re-extracted alignment of each locus}
-\item{\code{taxa}}{Names of the taxa included in the alignment}
-\item{\code{loci_partition}}{A data frame. Storing the names of the loci and their length}
+A named list containing:
+\describe{
+\item{\code{alignment}}{The concatenated \code{DNAbin} alignment matrix.}
+\item{\code{concat_fasta_path}}{Path to the written concatenated alignment file.}
+\item{\code{loci_fasta_path}}{Character vector of paths to per-locus re-extracted FASTA files.}
+\item{\code{taxa}}{Character vector of included taxon labels.}
+\item{\code{loci_parition}}{A \code{data.frame} of locus \code{name} and \code{length}.}
+\item{\code{sequence_composition}}{A \code{data.frame} indicating per-locus sequence presence for included taxa.}
 }
 }
 \description{
-Take individual alignment in fasta file, pair them based on a sequence mapping table, perform sequence filtering based on metadata (\code{\link[=exclude_by_meta]{exclude_by_meta()}}), glue the paired sequences into concatenated sequence, construct concatenated alignment based on their sequence availability at certain loci.
+Reads single-locus FASTA alignments, optionally applies metadata filtering via \code{\link[=exclude_by_meta]{exclude_by_meta()}},
+maps accession/sequence identifiers to organism labels using \code{sequence.map}, filters taxa by
+locus availability, writes the concatenated alignment and per-locus subsets, and returns summary metadata.
 }
 \seealso{
-\code{\link[=exclude_by_meta]{exclude_by_meta()}}
-
-\code{\link[=split_concat_alignment]{split_concat_alignment()}}
+\code{\link[=exclude_by_meta]{exclude_by_meta()}}, \code{\link[=split_concat_alignment]{split_concat_alignment()}}
 }

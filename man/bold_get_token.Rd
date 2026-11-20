@@ -2,15 +2,18 @@
 % Please edit documentation in R/bold.R
 \name{bold_get_token}
 \alias{bold_get_token}
-\title{Step 2: Get Query Token}
+\title{Get Query Token from BOLD API}
 \usage{
 bold_get_token(validated_query, extent = "full")
 }
 \arguments{
-\item{validated_query}{The validated query string from Step 1}
+\item{validated_query}{Character. Validated query string from Step 1.}
 
-\item{extent}{Extent of documents (default: "full")}
+\item{extent}{Character. Extent of documents to retrieve. Default is \code{"full"}.}
+}
+\value{
+A character string giving the BOLD \code{query_id} token.
 }
 \description{
-Step 2: Get Query Token
+Get Query Token from BOLD API
 }

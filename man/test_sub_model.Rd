@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{test_sub_model}
 \alias{test_sub_model}
-\title{Test for Best Fit Model in IQ-TREE}
+\title{Run Substitution Model Selection (ModelFinder) in IQ-TREE}
 \usage{
 test_sub_model(
   fasta_path,
@@ -13,17 +13,18 @@ test_sub_model(
 )
 }
 \arguments{
-\item{fasta_path}{Path to fasta file of the alignment}
+\item{fasta_path}{Character. Path to the input FASTA alignment file.}
 
-\item{run_name}{Character. A custom name to be added to output files}
+\item{run_name}{Character. Run label used to create the subdirectory and output prefix.}
 
-\item{output_folder}{Path to generate all output files from IQ-TREE}
+\item{output_folder}{Character. Base parent folder where \code{run_name} will be created.}
 
-\item{iqtree_exe}{Path to the IQ-TREE excutable}
+\item{iqtree_exe}{Character. Path to the IQ-TREE executable.}
 }
 \value{
-Path to the output folder
+Character path to the created run output directory (\code{file.path(output_folder, run_name)}).
 }
 \description{
-This function calls local IQ-TREE CLI excutable to perform the modelFinder.
+Copies a FASTA alignment into a dedicated run subdirectory, generates a shell script, and
+executes IQ-TREE with \verb{-m MF} to test substitution models.
 }

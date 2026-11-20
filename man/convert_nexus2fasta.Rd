@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{convert_nexus2fasta}
 \alias{convert_nexus2fasta}
-\title{Convert NEXUS alignment to FASTA alignment}
+\title{Convert a NEXUS Alignment to FASTA Format}
 \usage{
 convert_nexus2fasta(
   nexus_path,
@@ -12,17 +12,19 @@ convert_nexus2fasta(
 )
 }
 \arguments{
-\item{nexus_path}{Path to NEXUS file.}
+\item{nexus_path}{Character. Path to the input NEXUS alignment file.}
 
-\item{fasta_path}{Path to FASTA file.}
+\item{fasta_path}{Character or \code{NULL}. Path for the output FASTA file. If \code{NULL}, replaces
+\verb{\\\\.nexus$} in \code{nexus_path} with \code{.fasta}.}
 
-\item{safe_name}{logical. Whether to modify the name to remove "_".}
+\item{safe_name}{Logical. Whether to remove underscores (\verb{_}) from sequence labels. Default is \code{FALSE}.}
 
-\item{remove_outgroup}{Vector of sequence labels to remove. Default to \code{NULL} without removing any sequence. This happens before modifying sequence labels if \code{safe_name} is set to TRUE.}
+\item{remove_outgroup}{Character vector or \code{NULL}. Sequence labels to drop before renaming.
+Default is \code{NULL}.}
 }
 \value{
-The FASTA file will be written in the same directory. The path will be returned.
+Character path to the written FASTA file.
 }
 \description{
-Convert NEXUS alignment to FASTA alignment
+Convert a NEXUS Alignment to FASTA Format
 }

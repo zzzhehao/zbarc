@@ -7,16 +7,16 @@
 blast(query, db_path, evalue = 1e-05, max_target_seqs = 10)
 }
 \arguments{
-\item{query}{Path to a query FASTA file, or a raw DNA sequence string}
+\item{query}{Character. Path to a query FASTA file, or a raw DNA sequence string.}
 
-\item{db_path}{Path to the BLAST database (the base name returned by bold_build_blast_db)}
+\item{db_path}{Character. Path to the BLAST database (the base name returned by \code{\link[=bcdm2blastdb]{bcdm2blastdb()}}).}
 
-\item{evalue}{Expectation value (E) threshold for saving hits (default 1e-5)}
+\item{evalue}{Numeric. Expectation value (\code{E}) threshold for saving hits. Default is \code{1e-5}.}
 
-\item{max_target_seqs}{Maximum number of aligned sequences to keep per query (default 10)}
+\item{max_target_seqs}{Integer. Maximum number of aligned sequences to keep per query. Default is \code{10}.}
 }
 \value{
-A data.frame of BLAST results
+A \code{data.frame} of BLAST tabular hits (format 6), or \code{NULL} if no hits are found.
 }
 \description{
 Run a local BLAST search against a custom database

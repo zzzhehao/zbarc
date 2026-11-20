@@ -15,20 +15,22 @@ bold_get_query(
 )
 }
 \arguments{
-\item{tax}{Taxonomic ranks (e.g., kingdom, phylum, class, order, family, subfamily, tribe, genus, species, subspecies). Accepts character vector or list.}
+\item{tax}{Taxonomic ranks (e.g., kingdom, phylum, class, order, family, subfamily, tribe, genus, species, subspecies). Accepts a character vector or list.}
 
-\item{bin}{Barcode Index Number (BIN) URIs. Accepts character vector or list.}
+\item{bin}{Barcode Index Number (BIN) URIs. Accepts a character vector or list.}
 
-\item{geo}{Geopolitical divisions (e.g., country/ocean, province/state, region). Accepts character vector or list.}
+\item{geo}{Geopolitical divisions (e.g., country/ocean, province/state, region). Accepts a character vector or list.}
 
-\item{inst}{Institution names or sequence sites. Accepts character vector or list.}
+\item{inst}{Institution names or sequence sites. Accepts a character vector or list.}
 
-\item{recordsetcode}{Dataset codes. Accepts character vector or list.}
+\item{recordsetcode}{Dataset codes. Accepts a character vector or list.}
 
-\item{ids}{Specimen or sequence IDs (processid, sampleid, insdcacs). Accepts character vector or list.}
+\item{ids}{Specimen or sequence IDs (\code{processid}, \code{sampleid}, \code{insdcacs}). Accepts a character vector or list.}
+
+\item{max_chars}{Integer. Maximum character length per preprocessor request chunk. Default is \code{240}.}
 }
 \value{
-A validated query string of formal triplets from the BOLD preprocessor.
+Invisibly returns a character string of semicolon-separated validated query triplets.
 }
 \description{
 Takes vector or list inputs for available BOLD API scopes, formats them, and validates
@@ -43,6 +45,4 @@ Criteria can be combined to allow for different results:
 }
 
 For example, searching for \code{tax} "Aves" and \code{geo} "Argentina" returns barcodes that overlap on both the taxonomic and geographic criteria.
-
-For more details, see the BOLD API Documentation: < PASTE_LINK_HERE >
 }

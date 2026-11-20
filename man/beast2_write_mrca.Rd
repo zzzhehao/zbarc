@@ -2,18 +2,23 @@
 % Please edit documentation in R/sequence.R
 \name{beast2_write_mrca}
 \alias{beast2_write_mrca}
-\title{Write MRCA Prior into Alignment Nexus File for BEAST2}
+\title{Write MRCA Priors into a NEXUS Alignment File for BEAST2}
 \usage{
 beast2_write_mrca(nexus, monophyly_groups)
 }
 \arguments{
-\item{nexus}{A path to the alignment nexus file.}
+\item{nexus}{Character. Path to the target NEXUS alignment file.}
 
-\item{monophyly_groups}{A list defining monophyly groups. Each element of this list defines one monophyly group and must be a list itself containing the following two components:
+\item{monophyly_groups}{List of lists, where each element specifies one monophyly group:
 \describe{
-\item{\code{name}}{A character string (length 1) specifying the group's name.}
-\item{\code{labels}}{A character vector of taxa belonging to that group, this should be identical to the ones in the alginment.}}}
+\item{\code{name}}{Character string of length 1 naming the \code{taxset}.}
+\item{\code{labels}}{Character vector of taxon labels matching those in the alignment.}
+}}
+}
+\value{
+Invisibly returns the result of \code{write()}.
 }
 \description{
-BEAST2 produces full bifurcation ultrametric tree required to perform GMYC. MRCA Prior enforces certain taxa to be monophyly in the resulted tree, which serves as a method of defining the outgroups. The MRCA Prior information could be written in a nexus block and recognized in BEAUti and BEAST2.
+Appends a \verb{BEGIN sets;} block defining \code{taxset} monophyly constraints to a NEXUS file so
+they can be loaded into BEAUti and BEAST2 (e.g., to constrain outgroups for ultrametric trees).
 }

@@ -2,16 +2,21 @@
 % Please edit documentation in R/sequence.R
 \name{clean_label}
 \alias{clean_label}
-\title{Clean Sequence Labels in Alignment}
+\title{Clean Sequence Labels in a FASTA Alignment}
 \usage{
 clean_label(fasta_path, noprefix = F)
 }
 \arguments{
-\item{fasta_path}{Path to FASTA file}
+\item{fasta_path}{Character. Path to the input FASTA file.}
+
+\item{noprefix}{Logical. If \code{TRUE}, strips leading \code{ZHH} or \code{VPS} prefixes from sequence labels.
+Default is \code{FALSE}.}
 }
 \value{
-A new FASTA file will be written in the same directory. The path to the new file will be returned.
+Character path to the newly written \verb{*_cleaned.fasta} file in the same directory.
 }
 \description{
-This only applies to DZMB collection where the sequences are managed using field ID. The gene will be determined by the file name (whether it's COI, 18S, or 28S) and a gene suffix will be added to the voucher (e.g. VPS101_COI, ZHH003_18S).
+Formats sequence labels in a FASTA file by appending the detected gene name (\code{COI}, \verb{18S},
+\verb{28S}, or \verb{16S}) from \code{basename(fasta_path)} to voucher IDs matching \verb{^VPS[0-9]\{3\}} or
+\verb{^ZHH[0-9]\{3\}}, and strips trailing \code{.1} or \verb{.1_(reversed)} suffixes from sequence names.
 }

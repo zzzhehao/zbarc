@@ -7,22 +7,24 @@
 tree_reroot(tree, outgroup, outgroups = NULL, match.method = NULL)
 }
 \arguments{
-\item{tree}{A tidytree treedata object.}
+\item{tree}{A \code{tidytree} \code{treedata} object.}
 
-\item{outgroup}{Name of the outgroup that can be used to find all outgroup taxa. The name will be matched against tip label of the tree, and the best matching labels are used as outgroup. This argument will be ignored if \code{outgroups} is given.}
+\item{outgroup}{Character. Outgroup query string matched against tip labels when \code{outgroups} is \code{NULL}.}
 
-\item{outgroups}{A vector of characters that contains all taxa labels of the outgroups.}
+\item{outgroups}{Character vector or \code{NULL}. Explicit vector of tip labels defining the outgroup.}
 
-\item{match.method}{If \code{outgroup} is specified, how to find the outgroup taxa. \code{best} try to find all taxa whose name resembles the input, \code{include} find all taxa that includes the input in their name.}
+\item{match.method}{Character or \code{NULL}. Matching strategy when \code{outgroups} is \code{NULL}:
+\code{"best"} uses \code{zhutilsr::find_best_match()}, while \code{"include"} matches substrings via regex.}
 }
 \value{
-A rerooted tidytree treedata object.
+A rerooted \code{tidytree} \code{treedata} object.
 }
 \description{
 Reroot Consensus Tree Produced by MrBayes
 }
 \details{
-A proper rerooting is currently only guaranteed for consensus tree produced by MrBayes, due to inconsistent usage of the branch support value across variety of phylogenetic analysis programs. Details see Czech et al. 2017.
+Proper rerooting is currently only guaranteed for consensus trees produced by MrBayes due to
+inconsistent conventions for branch support values across phylogenetic tools (see Czech et al., 2017).
 }
 \references{
 Czech, L., Huerta-Cepas, J. and Stamatakis, A. (2017) “A Critical Review on the Use of Support Values in Tree Viewers and Bioinformatics Toolkits,” Molecular Biology and Evolution, 34(6), pp. 1535–1542. Available at: https://doi.org/10.1093/molbev/msx055.

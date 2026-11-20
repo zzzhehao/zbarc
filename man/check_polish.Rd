@@ -2,15 +2,18 @@
 % Please edit documentation in R/sequence_alignment.R
 \name{check_polish}
 \alias{check_polish}
-\title{Check alignment polishing}
+\title{Visually Compare Original and Polished Alignments with MAFFT}
 \usage{
 check_polish(aln.old, aln.clean)
 }
 \arguments{
-\item{aln_old}{DNAbin class object. Alignment before polishing.}
+\item{aln.old}{A \code{DNAbin} alignment object before polishing.}
 
-\item{aln_clean}{DNAbin class object. Alignment after polishing.}
+\item{aln.clean}{A \code{DNAbin} alignment object after polishing.}
+}
+\value{
+Invisibly returns the combined re-aligned sequences as a \code{DNAbin} object.
 }
 \description{
-Check alignment polishing
+Visually Compare Original and Polished Alignments with MAFFT
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence_mapper.R
 \name{generate_sequence_map}
 \alias{generate_sequence_map}
-\title{Create a Summary Table Mapping Sequence Label/Accession Number with Vouchered Animals.}
+\title{Create a Wide Sequence Map Linking Sequences to Specimens Across Genes}
 \usage{
 generate_sequence_map(
   metadata.sequence,
@@ -11,9 +11,21 @@ generate_sequence_map(
   col_id_sequence
 )
 }
+\arguments{
+\item{metadata.sequence}{A \code{data.frame} containing sequence-level metadata.}
+
+\item{col_gene}{Unquoted column name in \code{metadata.sequence} identifying the gene/locus.}
+
+\item{col_id_specimen}{Unquoted column name in \code{metadata.sequence} identifying the specimen.}
+
+\item{col_id_sequence}{Unquoted column name in \code{metadata.sequence} identifying the sequence or
+accession ID.}
+}
 \value{
-data.frame, basically a wide table of imported metadata data.frame, with every specimen (identified by \code{col_id_specimen}) as a row and every gene (identified by \code{col_gene}) as a column. Values are filled with \code{col_id_sequence}.
+A wide \code{data.frame} with a \code{specimen} column (from \code{col_id_specimen}) and one column
+per locus (\verb{gene_<col_gene>}) populated with values from \code{col_id_sequence}.
 }
 \description{
-This will summarize the sequence labels in the way that the sequnces originated from the same vouchered animals could be linked together, which is essential for concatenate multilocus alignment.
+Reshapes sequence metadata into a wide table linking sequences from the same vouchered
+specimen across loci, which can be used as \code{sequence.map} in \code{\link[=concatenate_alignment]{concatenate_alignment()}}.
 }

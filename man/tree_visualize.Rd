@@ -2,7 +2,7 @@
 % Please edit documentation in R/tree_handler.R
 \name{tree_visualize}
 \alias{tree_visualize}
-\title{Visualize Phylogenetic Tree (with optional Heatmap)}
+\title{Visualize a Phylogenetic Tree with Optional Heatmap Annotation}
 \usage{
 tree_visualize(
   tree,
@@ -21,29 +21,31 @@ tree_visualize(
 )
 }
 \arguments{
-\item{tree}{A tidytree treedata object.}
+\item{tree}{A \code{tidytree} \code{treedata} object.}
 
-\item{hm_data}{Optional data.frame for heatmap annotation. If NULL, heatmap is skipped.}
+\item{hm_data}{Optional \code{data.frame} for heatmap annotation. If \code{NULL}, no heatmap is drawn.}
 
-\item{format.taxa}{Logical. Whether taxa name should be formatted for plotmath.}
+\item{format.taxa}{Logical. Whether taxa names should be formatted for plotmath. Default is \code{FALSE}.}
 
-\item{parse}{Logical. Whether taxa name should be parsed by plotmath.}
+\item{parse}{Logical. Whether tip labels should be parsed as plotmath expressions. Default is \code{FALSE}.}
 
-\item{nodelab_threshold}{Numeric. Hide numeric node labels strictly less than or equal to this value.}
+\item{nodelab_threshold}{Numeric or \code{NULL}. Hide numeric node labels less than or equal to this value.}
 
-\item{hm_layout}{List containing heatmap layout parameters.}
+\item{hm_layout}{Named list of heatmap layout parameters (\code{offset}, \code{width}, \code{label_margin}).}
 
-\item{hm_args}{List of styling arguments passed to tree_annotate().}
+\item{hm_args}{Named list of styling arguments passed to \code{\link[=tree_annotate]{tree_annotate()}}.}
 
-\item{base_args}{List of rendering arguments for the base tree.}
+\item{base_args}{Named list of rendering arguments passed to \code{\link[=.tree_visualize_base]{.tree_visualize_base()}}.}
 
-\item{palette}{A character vector or list of palettes for heatmap colors.}
+\item{palette}{Character vector or list of color vectors for heatmap annotations. Default is \code{NULL}.}
 
-\item{palette_mapping}{Mapping vector for assigning multiple palettes to columns.}
+\item{palette_mapping}{Named vector or list mapping annotation columns to palettes. Default is \code{NULL}.}
+
+\item{contrast_factor}{Numeric. Brightness adjustment factor passed to \code{\link[=tree_annotate]{tree_annotate()}}. Default is \code{0}.}
 }
 \value{
-A completely assembled ggtree plot.
+A \code{ggtree} plot object.
 }
 \description{
-Visualize Phylogenetic Tree (with optional Heatmap)
+Visualize a Phylogenetic Tree with Optional Heatmap Annotation
 }

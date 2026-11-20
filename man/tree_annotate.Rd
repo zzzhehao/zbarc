@@ -2,7 +2,7 @@
 % Please edit documentation in R/tree_handler.R
 \name{tree_annotate}
 \alias{tree_annotate}
-\title{Add Heatmap Annotation to Phylogenetic Tree}
+\title{Add Heatmap Annotation to a Phylogenetic Tree}
 \usage{
 tree_annotate(
   p,
@@ -15,21 +15,28 @@ tree_annotate(
 )
 }
 \arguments{
-\item{p}{A ggtree plot object.}
+\item{p}{A \code{ggtree} plot object.}
 
-\item{hm_data}{A data.frame containing annotation data.}
+\item{hm_data}{A \code{data.frame} or tibble containing annotation columns indexed by tip label.}
 
-\item{hm_layout}{List containing layout parameters, only \code{offset}, \code{width} are accepted.}
+\item{hm_layout}{Named list specifying \code{offset} and \code{width} passed to \code{\link[ggtree:gheatmap]{ggtree::gheatmap()}}.
+Default is \code{list(offset = 0.01, width = 0.1)}.}
 
-\item{hm_args}{List of styling arguments passed to ggtree::gheatmap().}
+\item{hm_args}{Named list. Additional styling arguments passed to \code{\link[ggtree:gheatmap]{ggtree::gheatmap()}}.
+Default is \code{list()}.}
 
-\item{palette}{A character vector of colors, or a list of character vectors for multiple palettes.}
+\item{palette}{Character vector of colors, or a list of character vectors for multiple palettes.
+Default is \code{NULL}.}
 
-\item{palette_mapping}{A named vector or list mapping column names to indices/names in \code{palette}.}
+\item{palette_mapping}{Named vector or list mapping column names of \code{hm_data} to indices or
+names in \code{palette}. Default is \code{NULL}.}
+
+\item{contrast_factor}{Numeric. Brightness adjustment factor passed to
+\code{zhutilsr::.adjust_palette_brightness()}. Default is \code{0}.}
 }
 \value{
-A ggtree plot object with a heatmap.
+A \code{ggtree} plot object with the heatmap annotation layer added.
 }
 \description{
-Add Heatmap Annotation to Phylogenetic Tree
+Add Heatmap Annotation to a Phylogenetic Tree
 }

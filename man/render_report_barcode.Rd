@@ -2,7 +2,7 @@
 % Please edit documentation in R/report.R
 \name{render_report_barcode}
 \alias{render_report_barcode}
-\title{Generate a Combined Barcoding Report}
+\title{Generate a Combined Barcoding HTML Report}
 \usage{
 render_report_barcode(
   bold_jsonl,
@@ -17,24 +17,28 @@ render_report_barcode(
 )
 }
 \arguments{
-\item{bold_jsonl}{Path to BOLD JSONL file.}
+\item{bold_jsonl}{Character. Path to a BOLD JSONL result file.}
 
-\item{blast_json}{Path to NCBI BLAST JSON file.}
+\item{blast_json}{Character. Path to an NCBI BLAST JSON result file.}
 
-\item{fasta}{Path to FASTA file.}
+\item{fasta}{Character. Path to a sequence FASTA file.}
 
-\item{metadata}{Optional data.frame containing metadata.}
+\item{metadata}{Optional \code{data.frame} containing sequence/specimen metadata. Default is \code{NULL}.}
 
-\item{key_col}{Unquoted column name in \code{metadata} that matches sequence names.}
+\item{key_col}{Unquoted column name in \code{metadata} matching sequence names. Default is \code{NULL}.}
 
-\item{aligned}{Logical. If FALSE, unaligned FASTA will be aligned via MAFFT.}
+\item{aligned}{Logical. If \code{FALSE}, aligns \code{fasta} via \code{\link[=mafft]{mafft()}} before rendering. Default is \code{TRUE}.}
 
-\item{output_file}{The path where the final HTML report should be saved.}
+\item{output_file}{Character. Path where the final HTML report should be saved.}
 
-\item{description}{A string representing the name/title of the run.}
+\item{description}{Character. Title or description of the run. Default is \code{as.character(Sys.Date())}.}
 
-\item{mafft_args}{Additional arguments passed to MAFFT if aligned = FALSE.}
+\item{mafft_args}{Character vector or \code{NULL}. Additional arguments passed to \code{\link[=mafft]{mafft()}} when
+\code{aligned = FALSE}. Default is \code{NULL}.}
+}
+\value{
+Invisibly returns the normalized path to the generated HTML file.
 }
 \description{
-Generate a Combined Barcoding Report
+Generate a Combined Barcoding HTML Report
 }

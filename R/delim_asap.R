@@ -59,13 +59,13 @@ asap_execute <- function(
 #' An S7 class storing parsed ASAP partition statistics, specimen-to-OTU assignments,
 #' and pairwise genetic distance matrices.
 #'
-#' @property partitions A `data.frame` of all evaluated ASAP partitions.
-#' @property best_rank An `integer` partition rank.
-#' @property best_score A `numeric` ASAP score for the partition.
-#' @property best_p A `numeric` p-value (`Proba`) for the partition.
-#' @property notu An `integer` number of delimited subsets/OTUs.
-#' @property otu A `data.frame` mapping specimen `identifier` to `otu`.
-#' @property dist.mat A pairwise distance matrix object.
+#' @param partitions A `data.frame` of all evaluated ASAP partitions.
+#' @param best_rank An `integer` partition rank.
+#' @param best_score A `numeric` ASAP score for the partition.
+#' @param best_p A `numeric` p-value (`Proba`) for the partition.
+#' @param notu An `integer` number of delimited subsets/OTUs.
+#' @param otu A `data.frame` mapping specimen `identifier` to `otu`.
+#' @param dist.mat A pairwise distance matrix object.
 #'
 #' @export
 asap <- new_class(

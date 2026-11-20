@@ -2,10 +2,18 @@
 % Please edit documentation in R/bold.R
 \name{bold_read_data}
 \alias{bold_read_data}
-\title{Read downloaded text directly into R based on format}
+\title{Read Downloaded BOLD Text into R}
 \usage{
 bold_read_data(raw_text, format)
 }
+\arguments{
+\item{raw_text}{Character. Raw text returned by \code{\link[=bold_download]{bold_download()}}.}
+
+\item{format}{Character. Format of \code{raw_text}: \code{"tsv"}, \code{"dwc"}, or \code{"json"} (NDJSON).}
+}
+\value{
+A \code{data.frame} of parsed BOLD records.
+}
 \description{
-Read downloaded text directly into R based on format
+Read Downloaded BOLD Text into R
 }

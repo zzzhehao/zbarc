@@ -2,16 +2,16 @@
 % Please edit documentation in R/INSD_handler.R
 \name{.read_insd}
 \alias{.read_insd}
-\title{Extract INSD Metadata from \code{xml} File Downloaded From NCBI Genebank}
+\title{Extract INSD Metadata from an XML File Downloaded from NCBI GenBank}
 \usage{
 .read_insd(xml)
 }
 \arguments{
-\item{xml}{File path to \code{xml} file}
+\item{xml}{Character. File path to an INSD XML file.}
 }
 \value{
-A data.frame of flattened tabular metadata.
+A \code{data.frame} of flattened sequence, feature qualifier, and reference metadata.
 }
 \description{
-Extract INSD Metadata from \code{xml} File Downloaded From NCBI Genebank
+Extract INSD Metadata from an XML File Downloaded from NCBI GenBank
 }

@@ -2,24 +2,27 @@
 % Please edit documentation in R/delim_asap.R
 \name{asap_execute}
 \alias{asap_execute}
-\title{Performing ASAP}
+\title{Run ASAP Species Delimitation}
 \usage{
 asap_execute(input, output_dir, exe, dist = 3, overwrite = FALSE, ...)
 }
 \arguments{
-\item{input}{Character. A path to aligned fasta file as input.}
+\item{input}{Character. Path to an aligned FASTA file used as input.}
 
-\item{output_dir}{Character. A path to output directory.}
+\item{output_dir}{Character. Path to the output directory.}
 
-\item{exe}{Character. A path to ASAP excutable file.}
+\item{exe}{Character. Path to the ASAP executable file.}
 
-\item{dist}{Numeric. Method for calculating genetic distance. 0: Kimura-2P, 1: Jukes-Cantor, 2: Tamura Nei, 3: simple p-distance. Defualt to 3.}
+\item{dist}{Numeric or integer. Method for calculating genetic distance: \code{0} = Kimura-2P,
+\code{1} = Jukes-Cantor, \code{2} = Tamura-Nei, \code{3} = simple p-distance. Default is \code{3}.}
 
-\item{name}{description}
+\item{overwrite}{Logical. Whether to overwrite existing files in \code{output_dir}. Default is \code{FALSE}.}
+
+\item{...}{Additional arguments passed to the ASAP CLI executable.}
 }
 \value{
-A path to the output directory.
+Character path to \code{output_dir}.
 }
 \description{
-Performing ASAP
+Run ASAP Species Delimitation
 }

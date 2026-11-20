@@ -2,7 +2,7 @@
 % Please edit documentation in R/sequence.R
 \name{gblocks}
 \alias{gblocks}
-\title{Wrapper function for Gblocks}
+\title{Trim Conserved Alignment Blocks with Gblocks}
 \usage{
 gblocks(
   input,
@@ -19,35 +19,35 @@ gblocks(
 )
 }
 \arguments{
-\item{input}{Path to input FASTA file.}
+\item{input}{Character. Path to the input FASTA file.}
 
-\item{output}{Optional. Custom path for the output FASTA file. If \code{NULL} (default),
-automatically appends \code{_gb} before the input file's extension.}
+\item{output}{Character or \code{NULL}. Custom path for the trimmed FASTA file. If \code{NULL} (default),
+inserts \verb{_gb} before the file extension.}
 
-\item{t}{Type of sequence: \code{"d"} (DNA), \code{"p"} (Protein), or \code{"c"} (Codons). Default is \code{"d"}.}
+\item{t}{Character. Sequence type: \code{"d"} (DNA), \code{"p"} (Protein), or \code{"c"} (Codons). Default is \code{"d"}.}
 
-\item{b1}{Minimum number of sequences for a conserved position. If \code{"min"}, calculated as \code{ceiling(n_seq / 2) + 1}.}
+\item{b1}{Numeric or \code{"min"}. Minimum number of sequences for a conserved position. When \code{"min"},
+calculated as \code{ceiling(n_seq / 2) + 1}. Default is \code{"min"}.}
 
-\item{b2}{Minimum number of sequences for a flank position. If \code{"min"}, defaults to the value of \code{b1}.}
+\item{b2}{Numeric or \code{"min"}. Minimum number of sequences for a flank position. When \code{"min"},
+equals \code{b1}. Default is \code{"min"}.}
 
-\item{b3}{Maximum number of contiguous nonconserved positions. Default is \code{20}.}
+\item{b3}{Integer. Maximum number of contiguous non-conserved positions. Default is \code{20}.}
 
-\item{b4}{Minimum length of a block. Default is \code{2}.}
+\item{b4}{Integer. Minimum block length. Default is \code{2}.}
 
-\item{b5}{Allowed gap positions: \code{"a"} (All), \code{"h"} (Half), or \code{"n"} (None). Default is \code{"a"}.}
+\item{b5}{Character. Allowed gap positions: \code{"a"} (All), \code{"h"} (Half), or \code{"n"} (None). Default is \code{"a"}.}
 
-\item{args}{Additional arguments passed to Gblocks. Should be a character vector.}
+\item{args}{Character vector or \code{NULL}. Additional CLI arguments passed to Gblocks. Default is \code{NULL}.}
 
-\item{exec}{Path or command to the Gblocks executable. Defaults to \code{"Gblocks"}.}
+\item{exec}{Character. Path or command for the Gblocks executable. Default is \code{"Gblocks"}.}
 
-\item{browse}{Logical. If \code{TRUE}, the HTML visualization will be opened in the browser.}
+\item{browse}{Logical. If \code{TRUE}, opens the generated HTML visualization in a browser. Default is \code{TRUE}.}
 }
 \value{
-A character string representing the absolute or relative path to the trimmed FASTA alignment.
+Character path to the trimmed FASTA alignment file.
 }
 \description{
-User-facing wrapper for Gblocks. It automatically formats the output filename
-to avoid Gblocks' quirky \code{.fasta-gb} extension (e.g., rewriting it
-cleanly to \code{_gb.fasta}), executes the alignment trimming, and returns
-the path to the resulting FASTA file.
+User-facing wrapper for Gblocks that executes alignment trimming, renames Gblocks' default
+output file cleanly (e.g., \verb{_gb.fasta}), and returns the output file path.
 }

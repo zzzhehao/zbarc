@@ -2,15 +2,18 @@
 % Please edit documentation in R/bold.R
 \name{bold_download}
 \alias{bold_download}
-\title{Step 3: Perform Download}
+\title{Download Records from BOLD API}
 \usage{
 bold_download(query_id, format = "tsv")
 }
 \arguments{
-\item{query_id}{Token from Step 2}
+\item{query_id}{Character. Query token returned by \code{\link[=bold_get_token]{bold_get_token()}}.}
 
-\item{format}{Data format ("json", "tsv", or "dwc")}
+\item{format}{Character. Data format (\code{"tsv"}, \code{"dwc"}, or \code{"json"}). Default is \code{"tsv"}.}
+}
+\value{
+A UTF-8 character string containing the raw downloaded records.
 }
 \description{
-Step 3: Perform Download
+Download Records from BOLD API
 }

@@ -2,19 +2,24 @@
 % Please edit documentation in R/sequence_alignment.R
 \name{mafft}
 \alias{mafft}
-\title{Wrapper function for MAFFT}
+\title{Align Sequences Using MAFFT}
 \usage{
 mafft(input, output, browse = TRUE, args = NULL)
 }
 \arguments{
-\item{input}{Path to input FASTA file.}
+\item{input}{Character. Path to input FASTA file.}
 
-\item{output}{Path to output FASTA file.}
+\item{output}{Character. Path to output aligned FASTA file.}
 
-\item{browse}{If \code{TRUE}, the alignment will be shown on default browser.}
+\item{browse}{Logical. If \code{TRUE}, opens the resulting alignment in a browser via
+\code{\link[DECIPHER:BrowseSeqs]{DECIPHER::BrowseSeqs()}}. Default is \code{TRUE}.}
 
-\item{args}{Additional argument passed to MAFFT. Should be a character vector.}
+\item{args}{Character vector or \code{NULL}. Additional CLI arguments passed to \code{mafft}.
+Default is \code{NULL}.}
+}
+\value{
+Invisibly returns the integer exit status code from \code{system2("mafft", ...)}.
 }
 \description{
-Wrapper function for MAFFT
+Align Sequences Using MAFFT
 }

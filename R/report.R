@@ -97,7 +97,7 @@ render_report <- function(
 #' @param output_file Character. Path where the final HTML report should be saved.
 #' @param description Character. Title or description of the run. Default is `as.character(Sys.Date())`.
 #' @param mafft_args Character vector or `NULL`. Additional arguments passed to [mafft()] when
-#'   `aligned = FALSE`. Default is `NULL`[cite: 8, 11].
+#'   `aligned = FALSE`. Default is `NULL`.
 #'
 #' @return Invisibly returns the normalized path to the generated HTML file.
 #' @export

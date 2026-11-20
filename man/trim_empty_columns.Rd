@@ -7,18 +7,17 @@
 trim_empty_columns(x, chars = c("-", "n", "?"))
 }
 \arguments{
-\item{x}{A \code{DNAbin} object. Can be a matrix or a list. If provided as a list,
-all sequences must have the exact same length (i.e., they must be aligned).}
+\item{x}{A \code{DNAbin} object (matrix, list, or vector). If provided as a list,
+all sequences must have the same length.}
 
-\item{chars}{A character vector specifying which bases should be treated as "empty".
-Defaults to \code{c("-", "n", "?")}. Case-insensitive.}
+\item{chars}{Character vector specifying which bases should be treated as "empty".
+Defaults to \code{c("-", "n", "?")} (case-insensitive).}
 }
 \value{
-A \code{DNAbin} object of the same structure as \code{x} (matrix or list)
-with the empty columns removed.
+A \code{DNAbin} object of the same structure as \code{x} with empty columns removed.
 }
 \description{
 Scans a \code{DNAbin} alignment and removes any columns (positions) where
 all sequences consist entirely of specified target characters, such as gaps (\code{-}),
-ambiguous bases (\code{N}), or missing data (\code{?}).
+ambiguous bases (\code{N}), or missing data (\verb{?}).
 }

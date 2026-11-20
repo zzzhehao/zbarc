@@ -2,21 +2,27 @@
 % Please edit documentation in R/tree_handler.R
 \name{tree_relabel}
 \alias{tree_relabel}
-\title{Relabel Tree's Tip Labels}
+\title{Relabel Tree Tip Labels Using a Lookup Mapper}
 \usage{
 tree_relabel(tree, identifier = "sequence", mapper)
 }
 \arguments{
-\item{tree}{A tidytree treedata object.}
+\item{tree}{A \code{tidytree} \code{treedata} object.}
 
-\item{identifier}{What identifier stands for. Default to \code{sequence} which means the taxa name of the tree is the sequence name. Set this to \code{organism} when running concatenated analysis, taxa name of the tree is the organism name.}
+\item{identifier}{Character. Mode for matching tip labels: \code{"sequence"} (default) maps tip
+labels directly via \code{identifier} to \code{c_organism_label}; \code{"organism"} matches voucher prefixes
+(\verb{^ZHH|^VPS}) via \code{c_organism_id} to \code{c_organism_label}.}
+
+\item{mapper}{A \code{data.frame} lookup table containing mapping columns (\code{identifier},
+\code{c_organism_id}, and \code{c_organism_label}).}
 }
 \value{
-A relabeled tidytree treedata object.
+A \code{tidytree} \code{treedata} object with updated \verb{@phylo$tip.label}.
 }
 \description{
-Relabel Tree's Tip Labels
+Relabel Tree Tip Labels Using a Lookup Mapper
 }
 \details{
-Sometimes the bad input mapper could case C++ level crash when bad labeled tree are passed to \link[ggtree:ggtree]{ggtree::ggtree} for plotting. In such case, there are probably duplicated labels passed to tree tip label by this function. Check your input mapper for duplicated values, use \link[dplyr:distinct]{dplyr::distinct} to clean up before input.
+Duplicate labels in the resulting tip labels can cause C++-level errors when passed to
+\code{\link[ggtree:ggtree]{ggtree::ggtree()}}. Deduplicate \code{mapper} (e.g., with \code{\link[dplyr:distinct]{dplyr::distinct()}}) beforehand if needed.
 }

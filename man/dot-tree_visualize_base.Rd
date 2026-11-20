@@ -19,30 +19,37 @@
 )
 }
 \arguments{
-\item{tree}{A prepared tidytree object.}
+\item{tree}{A prepared \code{tidytree} \code{treedata} object.}
 
-\item{nodelab_threshold}{Numeric. Threshold to filter numeric node labels (e.g., 0.95).}
+\item{nodelab_threshold}{Numeric or \code{NULL}. Threshold below or equal to which numeric node
+labels are hidden (\code{NA}). Default is \code{NULL}.}
 
-\item{tree_angle}{Numeric. Angle in degrees to rotate the entire circular tree.}
+\item{tree_angle}{Numeric or \code{NULL}. Angle in degrees to rotate the tree. Default is \code{NULL}.}
 
-\item{ggtree_args}{List of arguments passed to \code{\link[ggtree:ggtree]{ggtree::ggtree()}}.}
+\item{ggtree_args}{Named list. Additional arguments passed to \code{\link[ggtree:ggtree]{ggtree::ggtree()}}. Default is \code{list()}.}
 
-\item{tiplab_args}{List of arguments passed to \code{\link[ggtree:geom_tiplab]{ggtree::geom_tiplab()}}.}
+\item{tiplab_args}{Named list. Arguments passed to \code{\link[ggtree:geom_tiplab]{ggtree::geom_tiplab()}}.}
 
-\item{nodelab_args}{List of arguments passed to \code{\link[ggtree:geom_nodelab]{ggtree::geom_nodelab()}}.}
+\item{nodelab_args}{Named list. Arguments passed to \code{\link[ggtree:geom_nodelab]{ggtree::geom_nodelab()}}.}
 
-\item{rootedge}{Numeric. Length of the root edge.}
+\item{rootedge}{Numeric. Length of the root edge. Default is \code{0.02}.}
 
-\item{y.exp}{Numeric vector of length 2 for y-axis expansion.}
+\item{y.exp}{Numeric vector of length 2 passed to \code{expand} in \code{\link[ggplot2:scale_y_continuous]{ggplot2::scale_y_continuous()}}.
+Default is \code{c(0.1, 0.1)}.}
 
-\item{x.exp}{Numeric vector of length 2 for x-axis expansion. Default to \verb{\code{NULL}} which opts to the pacakge default behaviour.}
+\item{x.exp}{Numeric vector of length 2 or \code{NULL}. Controls x-axis expansion when non-\code{NULL}.
+Default is \code{NULL} (uses package default behavior).}
 
-\item{treescale_pos}{Numeric vector of length 2 for positioning the tree scale: \verb{\code{c(x, y)}}.}
+\item{treescale_pos}{Numeric vector of length 2 giving \code{c(x, y)} coordinates for the tree scale.
+Default is \code{c(0, -1)}.}
+
+\item{treescale_args}{Named list. Additional arguments passed to \code{\link[ggtree:geom_treescale]{ggtree::geom_treescale()}}.
+Default is \code{list()}.}
 }
 \value{
-A ggtree plot object.
+A \code{ggtree} plot object.
 }
 \description{
-Draws the base tree with customizable nodes and tips using argument lists
-to prevent parameter bloat.
+Draws the base phylogenetic tree with customizable tip labels, node support labels,
+root edge, rotation, and scale bar.
 }

@@ -7,10 +7,10 @@
 read_contree_mrbayes(assets_path)
 }
 \arguments{
-\item{assets_path}{Path to \code{.con.tre} file or the folder containing the file. If to the folder, there could only be one \code{.con.tre} file in the folder.}
+\item{assets_path}{Character. Path to a \code{.con.tre} file or a folder containing a single \code{.con.tre} file.}
 }
 \value{
-A tidytree treedata object.
+A \code{tidytree} \code{treedata} object read via \code{\link[treeio:read.mrbayes]{treeio::read.mrbayes()}}.
 }
 \description{
 Read MrBayes Output Consensus Tree

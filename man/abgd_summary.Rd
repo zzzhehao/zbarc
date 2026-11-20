@@ -2,37 +2,29 @@
 % Please edit documentation in R/sequence.R
 \name{abgd_summary}
 \alias{abgd_summary}
-\title{Generate Summary for ABGD Result}
+\title{Summarize ABGD Partitions and Plot Group Counts}
 \usage{
 abgd_summary(output_folder, silent = F, text.partition.size = 3.4)
 }
 \arguments{
-\item{output_folder}{Path to the ABGD output folder.}
+\item{output_folder}{Character. Path to the ABGD output folder.}
 
-\item{silent}{Logical. Whether show plot or not.}
+\item{silent}{Logical. If \code{FALSE}, prints the summary plot. Default is \code{FALSE}.}
 
-\item{text.partition.size}{Text size of the prior paritition over points.}
+\item{text.partition.size}{Numeric. Text size for prior divergence labels above points.
+Default is \code{3.4}.}
 }
 \value{
-A list of length 2.
+A named list of length 2:
 \describe{
-\item{\code{plot}}{A plot showing number of groups fround with each partition will be shown.}
-\item{\code{summary}}{A data.frame of number of groups and the prior intraspecific divergence of each partition will be returned.}
-
-A named list. \describe{
-\item{\code{plot}}{A ggplot object, the summary plot}
-\item{\code{summary}}{A data frame of the partition summary}
+\item{\code{plot}}{A \code{ggplot} object showing initial and recursive group counts across partitions.}
+\item{\code{summary}}{A \code{data.frame} summarizing \code{index}, \code{initial}, \code{recursive}, \code{fine_group},
+\code{fine_group_prop}, and \code{prior} intraspecific divergence.}
 }
 }
 \description{
-Generate Summary for ABGD Result
+Summarize ABGD Partitions and Plot Group Counts
 }
 \seealso{
-\code{\link[=abgd_execute]{abgd_execute()}}
-
-\code{\link[=abgd_read_result]{abgd_read_result()}}
-
-\code{\link[=abgd_read_result_all]{abgd_read_result_all()}}
-
-\code{\link[=abgd_delim]{abgd_delim()}}
+\code{\link[=abgd_execute]{abgd_execute()}}, \code{\link[=abgd_read_result]{abgd_read_result()}}, \code{\link[=abgd_read_result_all]{abgd_read_result_all()}}, \code{\link[=abgd_delim]{abgd_delim()}}
 }
