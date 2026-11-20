@@ -1,113 +1,28 @@
+
 #' Create a Summary Table Mapping Sequence Label/Accession Number with Vouchered Animals.
 #'
 #' @description
 #' This will summarize the sequence labels in the way that the sequnces originated from the same vouchered animals could be linked together, which is essential for concatenate multilocus alignment.
 #'
-#' @return Nothing. A data.frame will be written into the database.
-#' @param regenerate logical. Whether to overwrite existing table in the database. Otherwise only the rows with vouchered animal not yet in the database will be added.
-#' @import DBI
-#' @import dplyr
-#' @import RSQLite
-#' @import tidyr
-#' @import stringr
-update_sequence_map <- function(regenerate = F) {
+#' @return data.frame, basically a wide table of imported metadata data.frame, with every specimen (identified by \code{col_id_specimen}) as a row and every gene (identified by \code{col_gene}) as a column. Values are filled with \code{col_id_sequence}.
+#' @export
+generate_sequence_map <- function(
+    metadata.sequence,
+    col_gene,
+    col_id_specimen,
+    col_id_sequence
+) {
     # Generate wide table
-    metadata.seq <- zhutilsr::db_pull("metadata.Sequence.NCBI", T, T)
-    sequence.map.ncbi <- metadata.seq %>%
-        dplyr::filter(!is.na(c_gene)) %>%
+        sequence.map <- metadata.sequence %>%
+        dplyr::filter(!is.na({{ col_gene }})) %>%
         tidyr::pivot_wider(
-            id_cols = c_organism_id,
-            names_from = c_gene,
-            names_prefix = "c_gene_",
-            values_from = `INSDSeq_primary-accession`
-        )
-
-    # Combine with vps names
-    allvps <- zhutilsr::db_pull("metadata.Specimen.Haploniscidae") %>%
-        dplyr::pull(voucher) %>%
-        sort() %>%
-        as.character() %>%
-        stringr::str_pad(3, "left", "0")
-    noprefix.vps <- data.frame(c_organism_id = allvps)
-    vps.map <- dplyr::bind_rows(
-        dplyr::mutate(noprefix.vps, c_organism_id = paste0("ZHH", c_organism_id)),
-        dplyr::mutate(noprefix.vps, c_organism_id = paste0("VPS", c_organism_id))
-    ) %>%
-        dplyr::mutate(
-            c_gene_COI = paste0(c_organism_id, "_COI"),
-            c_gene_16S = paste0(c_organism_id, "_16S"),
-            c_gene_18S = paste0(c_organism_id, "_18S"),
-            c_gene_28S = paste0(c_organism_id, "_28S"),
-        )
-
-    sequence.map <- dplyr::bind_rows(sequence.map.ncbi, vps.map)
-    metadata.spec <- zhutilsr::db_pull("metadata.Specimen.Haploniscidae") %>%
-        dplyr::mutate(
-            label_genetics = paste(gensp_morpho_ZH, DZMB2HH, sep = "_") %>%
-                gsub("\\.", "", .) %>%
-                gsub(" ", "_", .)
-        )
-    sequence.map <- sequence.map %>%
-        dplyr::mutate(
-            id = 1:nrow(sequence.map),
-            c_organism_label = c_organism_id %>%
-                gsub(" ", "_", .) %>%
-                gsub("\\.", "", .) %>%
-                gsub(":", "-", .) %>%
-                gsub("^Haploniscidae_sp_[A-Z]{3,5}[0-9]{3,4}-[0-9]{2}_", "", .), # CCZ batch with ultra long name
-            c_organism_label = dplyr::case_when(
-                stringr::str_detect(c_organism_id, "^[A-Z]{3}[0-9]{3}$") ~ {
-                    input_key <- stringr::str_sub(c_organism_id, 4, 6) %>% as.numeric()
-                    purrr::map_vec(
-                        input_key,
-                        ~ zhutilsr::map_value(.x, metadata.spec, voucher, label_genetics)
-                    ) %>%
-                        paste0(., "_", c_organism_id)
-                },
-                .default = c_organism_label
-            )
-        )
-
-    BATJRdb <- zhutilsr::.dbconn()
-    if (!"sequence.map" %in% DBI::dbListTables(BATJRdb)) {
-        # Initialize
-        print("No sequence map found, initializing ... ")
-        DBI::dbWriteTable(BATJRdb, "sequence.map", sequence.map)
-        DBI::dbDisconnect(BATJRdb)
-        return()
-    } else {
-        if (regenerate) {
-            print("Regenerating sequence.map table ... ")
-            DBI::dbWriteTable(BATJRdb, "sequence.map", sequence.map, overwrite = T)
-            DBI::dbDisconnect(BATJRdb)
-            return()
-        }
-        sequence.map.registered <- zhutilsr::db_pull("sequence.map", F, F)
-
-        sequence.map.new <- sequence.map %>%
-            dplyr::filter(
-                !c_organism_id %in% sequence.map.registered$c_organism_id
-            )
-        sequence.map.updated <- dplyr::bind_rows(
-            sequence.map.registered,
-            sequence.map.new
-        )
-        DBI::dbWriteTable(
-            BATJRdb,
-            "sequence.map",
-            sequence.map.updated,
-            overwrite = T
-        )
-        zhutilsr::db_sign(
-            "sequence.map",
-            "Append",
-            "Sequence map (accession number of each specimen voucher) has been updated.",
-            Sys.Date() %>% gsub("-", "", .) %>% paste0("sequenceMap")
-        )
-        print("Sequence map has been successfully updated.")
-        DBI::dbDisconnect(BATJRdb)
-        return()
-    }
+            id_cols = {{ col_id_specimen }},
+            names_from = {{ col_gene }},
+            names_prefix = "gene_",
+            values_from = {{ col_id_sequence }}
+        ) %>% 
+        rename(specimen = {{ col_id_specimen }})
+    return(sequence.map)
 }
 
 
