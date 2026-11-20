@@ -38,7 +38,7 @@ Imports:
     zhutilsr (>= 0.0.1),
     lifecycle
 Suggests:
-    splits (== 1.0-20),
+    splits,
     sangeranalyseR (>= 1.23.0)
 Additional_repositories:
     http://R-Forge.R-project.org
