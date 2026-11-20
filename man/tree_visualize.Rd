@@ -2,29 +2,48 @@
 % Please edit documentation in R/tree_handler.R
 \name{tree_visualize}
 \alias{tree_visualize}
-\title{Visualize Phylogenetic Tree}
+\title{Visualize Phylogenetic Tree (with optional Heatmap)}
 \usage{
 tree_visualize(
   tree,
-  xlim.factor = 1.5,
-  align = F,
-  taxa.font.size = 3.5,
-  node.font.size = 3.5,
-  format.taxa = T,
-  linesize = NULL,
-  ggtree_args = NULL
+  hm_data = NULL,
+  format.taxa = FALSE,
+  parse = FALSE,
+  nodelab_threshold = NULL,
+  hm_layout = list(offset = 0.01, width = 0.1, label_margin = 0.02),
+  hm_args = list(),
+  base_args = list(tiplab_args = list(size = 3, align = TRUE), nodelab_args = list(size =
+    3, nudge_x = 0.001, nudge_y = 0, hjust = 0), ggtree_args = list(size = 0.5), y.exp =
+    c(0.01, 0.01)),
+  palette = NULL,
+  palette_mapping = NULL,
+  contrast_factor = 0
 )
 }
 \arguments{
-\item{tree}{A tree for visualization.}
+\item{tree}{A tidytree treedata object.}
 
-\item{xlim.factor}{A factor to expand the x axis.}
+\item{hm_data}{Optional data.frame for heatmap annotation. If NULL, heatmap is skipped.}
 
-\item{linesize}{Thickness of the tree lines. Default to \code{NULL}, which is set automatically by the function.}
+\item{format.taxa}{Logical. Whether taxa name should be formatted for plotmath.}
+
+\item{parse}{Logical. Whether taxa name should be parsed by plotmath.}
+
+\item{nodelab_threshold}{Numeric. Hide numeric node labels strictly less than or equal to this value.}
+
+\item{hm_layout}{List containing heatmap layout parameters.}
+
+\item{hm_args}{List of styling arguments passed to tree_annotate().}
+
+\item{base_args}{List of rendering arguments for the base tree.}
+
+\item{palette}{A character vector or list of palettes for heatmap colors.}
+
+\item{palette_mapping}{Mapping vector for assigning multiple palettes to columns.}
 }
 \value{
-A ggtree object.
+A completely assembled ggtree plot.
 }
 \description{
-Visualize Phylogenetic Tree
+Visualize Phylogenetic Tree (with optional Heatmap)
 }

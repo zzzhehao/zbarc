@@ -12,6 +12,7 @@ concatenate_alignment(
   accs_col,
   include_strategy = "all",
   include_strategy_loci,
+  include_by,
   output_folder,
   run_name = NULL,
   exclude_options = NULL

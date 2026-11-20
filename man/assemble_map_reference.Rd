@@ -11,13 +11,63 @@ assemble_map_reference(
   reference,
   output,
   run_name = NULL,
-  mothur_args = list(),
+  trim_args = list(),
   AlignSeqs_args = list(),
   AdjustAlignment_args = list(),
   ConsensusSequence_args = list(),
+  output_file = T,
   browse = F
 )
 }
+\arguments{
+\item{source_folder}{Path to the folder containing ab1 files of the reads.}
+
+\item{contig_name_regex}{A regex pattern to find ab1 files to be assembled.}
+
+\item{primers}{Path to the YAML file, or a \code{data.frame} containing the primer information. The YAML file is structured as follows:
+\preformatted{
+primers:
+  - name: 18A1mod
+    direction: forward
+    sequence: CTGGTTGATCCTGCCAGTCATATGC
+    spec: forward_start
+  ...
+}
+The four shown properties are required as column if \code{data.frame} is provided. The primers are listed following the order of forward first to forward last, reverse first to reverse last. \code{name} should match the primer names in the ab1 files, \code{direction} decides whether a read will be reverse-complement before mapping, \code{sequence} will be removed from reads, and \code{spec} is a special field with pre-defined keywords:
+\describe{
+\item{forward_start}{The first primer of the forward strand}
+\item{forward_end}{The last primer of the forward strand}
+\item{reverse_start}{The first primer of the reverse strand}
+\item{reverse_end}{The last primer of the reverse strand}
+}}
+
+\item{reference}{A \code{Biostrings::DNAStringSet} class containing the reference sequence, a path to a fasta file containing one sequence, or a NCBI GenBank accession number.}
+
+\item{output}{Path to the output folder}
+
+\item{run_name}{Character. Run name to be assigned to output files.}
+
+\item{trim_args}{Named list. Arguments to be passed to \code{\link[sangeranalyseR:SangerRead]{sangeranalyseR::SangerRead()}}.}
+
+\item{AlignSeqs_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}.}
+
+\item{AdjustAlignment_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:AdjustAlignment]{DECIPHER::AdjustAlignment()}}.}
+
+\item{ConsensusSequence_args}{Named list. Arguments to be passed to \code{\link[DECIPHER:ConsensusSequence]{DECIPHER::ConsensusSequence()}}.}
+
+\item{browse}{Logical. Whether to open browser showing the alignments. Default to \code{FALSE}}
+
+\item{no_file}{Logical. Whether to write assembled contigs into a fasta file. Default to \code{TRUE}}
+}
+\value{
+Assembled contigs in DNAStringSet class.
+}
 \description{
-Assemble contigs by mapping sanger sequencing reads to a reference sequence
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+This function is deprecated in version 0.0.1.9001 and will be removed in a future update.
+
+Assemble a set of sanger sequencing reads (ab1) by mapping them against a reference sequence.
+}
+\details{
+AB1 reads are read by \code{\link[sangeranalyseR:SangerRead]{sangeranalyseR::SangerRead()}} with trimming options specified by \code{trim_args}. Primer sequences are removed by matching primer information with ab1 reads and trimming with \code{\link[Biostrings:trimLRPatterns]{Biostrings::trimLRPatterns()}}. Cleaned reads are aligned against reference one-by-one using \code{\link[DECIPHER:AlignSeqs]{DECIPHER::AlignSeqs()}}. The alignment is optimized with \code{\link[DECIPHER:AdjustAlignment]{DECIPHER::AdjustAlignment()}} and the contig is produced by \code{\link[DECIPHER:ConsensusSequence]{DECIPHER::ConsensusSequence()}}.
 }

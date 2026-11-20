@@ -8,11 +8,11 @@ Description: Tools for sanger sequence handling, DNA barcoding, species delimtat
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
     stats (>= 4.5.0),
     ape (>= 5.8),
     Biostrings (>= 2.78.0),
+    BOLDconnectR (>= 1.0.3),
     cli (>= 3.6.6),
     DBI (>= 1.2.3),
     DECIPHER (>= 3.6.0),
@@ -36,8 +36,10 @@ Imports:
     XML (>= 3.99),
     xml2 (>= 1.3.6),
     yaml (>= 2.3.10),
-    zhutilsr (>= 0.0.1)
+    zhutilsr (>= 0.0.1),
+    lifecycle
 Additional_repositories:
     http://R-Forge.R-project.org
 Remotes: 
-    zzzhehao/zhutilsr@main
+    zzzhehao/zhutilsr@dev
+Config/roxygen2/version: 8.1.1.9000

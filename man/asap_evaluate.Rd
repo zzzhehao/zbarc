@@ -4,13 +4,17 @@
 \alias{asap_evaluate}
 \title{Evaluates ASAP output}
 \usage{
-asap_evaluate(dir)
+asap_evaluate(dir, part = 3, smart_filter = TRUE)
 }
 \arguments{
 \item{dir}{A path to ASAP result directory.}
+
+\item{part}{Integer. Number of the best partitions to evaluate. Default to 3.}
+
+\item{smart_filter}{Logical. If TRUE, filters out duplicate partitions with the same number of groups, keeping only the one with the best p-value. Default to TRUE.}
 }
 \value{
-A \link{asap} class object.
+A list of \link{asap} class objects length of \code{part}.
 }
 \description{
 Evaluates ASAP output

@@ -13,5 +13,5 @@ polish_alignment(aln, verbose = T)
 DNAbin class object. Polished alignment.
 }
 \description{
-Polish alignment
+This function is deprecated.
 }

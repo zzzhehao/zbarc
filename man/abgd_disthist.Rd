@@ -13,5 +13,5 @@ abgd_disthist(distmat_path)
 Plot out distance histogram
 }
 \seealso{
-\code{\link[=abgd_excute]{abgd_excute()}}
+\code{\link[=abgd_execute]{abgd_execute()}}
 }
