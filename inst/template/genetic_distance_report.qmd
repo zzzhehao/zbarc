@@ -1,0 +1,28 @@
+---
+title: "Genetic Distance Report"
+format: 
+  html:
+    theme: 
+      light: flatly
+      dark: darkly
+    page-layout: custom
+    toc: false
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+params:
+  description: 
+    value: ""
+  input: 
+    value: []
+---
+
+```{r}
+#| output: false
+distance_files <- params$input
+```
+
+{{< include _distance_data.qmd >}}
+{{< include _distance_ui.qmd >}}

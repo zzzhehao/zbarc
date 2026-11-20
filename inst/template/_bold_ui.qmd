@@ -1,0 +1,176 @@
+
+```{=html}
+<style>
+  /* Maximize width with minimal margins */
+  body {
+    padding: 1% 2%;
+    max-width: 100%;
+  }
+  #title-block-header {
+    margin-bottom: 20px;
+  }
+  
+  /* Light Mode Palette (Default Flatly-compatible) */
+  :root, body.quarto-light {
+    --tbl-bg: #ffffff;
+    --tbl-text: #333333;
+    --tbl-border: #dfe2e5;
+    --tbl-stripe: #f6f8fa;
+    --tbl-highlight: #e6f2ff;
+    --tbl-details-bg: #fafbfc;
+    --tbl-accent: #0366d6;
+  }
+  
+  /* Dark Mode Palette (One Dark Pro / Aion Theme) */
+  html[data-bs-theme="dark"], 
+  body[data-bs-theme="dark"], 
+  body.quarto-dark {
+    --tbl-bg: #282c34;
+    --tbl-text: #abb2bf;
+    --tbl-border: #181a1f;
+    --tbl-stripe: #2c313a;
+    --tbl-highlight: #323842;
+    --tbl-details-bg: #21252b;
+    --tbl-accent: #61afef;
+    background-color: var(--tbl-bg);
+  }
+  
+  /* Fix reactable details row background bleed */
+  .rt-tr-details {
+    background-color: var(--tbl-details-bg) !important;
+  }
+
+  /* Link hover styling */
+  a.bold-link:hover {
+    filter: brightness(1.2);
+    text-decoration: underline !important;
+  }
+</style>
+```
+
+:::{.callout-note collapse="true" title="Description"}
+
+`r params$description`
+
+:::
+
+
+:::{.callout-note collapse="true" title="Input Files Used"}
+
+```{r}
+#| results: asis
+# Convert to full absolute paths for clarity in the report
+full_paths <- normalizePath(bold_files, mustWork = FALSE)
+cat(paste("- `", full_paths, "`\n", sep=""))
+```
+
+:::
+
+```{r}
+#| output: false
+library(jsonlite)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+```
+
+```{r}
+# Render Level 1: Best hit ID per query sequence
+reactable(
+  summary_bold_df,
+  theme = dynamic_theme,
+  highlight = TRUE,
+  compact = TRUE,
+  defaultPageSize = 100, 
+  onClick = "expand",
+  style = list(fontSize = "13px"), 
+  columns = list(
+    query_id = colDef(name = "Query Name", minWidth = 150),
+    top_id = colDef(
+      name = "Identification Result", 
+      minWidth = 200,
+      cell = function(value) {
+        if (value == "No Hit") {
+          htmltools::span(style = "color: #e06c75; font-style: italic;", value)
+        } else {
+          htmltools::span(style = "font-weight: 600;", value)
+        }
+      }
+    ),
+    hit_id = colDef(
+        name = "Top Hit Database ID", 
+        minWidth = 250,
+        html = TRUE,
+        cell = generate_bold_link
+    ),
+    pident = colDef(
+      name = "Identity", 
+      format = colFormat(digits = 2, suffix = "%"),
+      cell = function(value) if(is.na(value)) "-" else sprintf("%.2f%%", value)
+    ),
+    qcovhsp = colDef(
+      name = "Coverage", 
+      format = colFormat(digits = 0, suffix = "%"),
+      cell = function(value) if(is.na(value)) "-" else sprintf("%.0f%%", value)
+    ),
+    evalue = colDef(
+      name = "E-value", 
+      cell = function(value) if(is.na(value)) "-" else sprintf("%.2e", value)
+    ),
+    bitscore = colDef(
+      name = "Bit Score", 
+      cell = function(value) if(is.na(value)) "-" else sprintf("%.1f", value)
+    )
+  ),
+  details = function(index) {
+    current_query <- summary_bold_df$query_id[index]
+    
+    # Filter for all hits corresponding to this query
+    sub_df <- bold_hits %>% 
+      filter(query_id == current_query, !is.na(hit_id)) %>%
+      select(hit_id, top_id, taxonomy, pident, qcovhsp, evalue, bitscore, overlap, mismatch, gaps)
+    
+    # If no hits, provide a clean fallback message instead of a broken table
+    if (nrow(sub_df) == 0) {
+      return(
+        htmltools::div(
+          style = "padding: 20px; background-color: transparent; font-style: italic; color: var(--tbl-text); opacity: 0.8;",
+          "No matching BOLD records found for this query sequence."
+        )
+      )
+    }
+    
+    # Render Level 2: Nested Table of all hits for the query
+    htmltools::div(
+      style = "padding: 16px; background-color: transparent; border-left: 4px solid var(--tbl-accent);",
+      htmltools::h5(paste("All BOLD Hits for:", current_query), style="margin-top:0; margin-bottom: 15px; color: var(--tbl-text);"),
+      
+      reactable(
+        sub_df,
+        theme = dynamic_theme,
+        highlight = TRUE,
+        compact = TRUE,
+        onClick = "expand",
+        style = list(fontSize = "12px"), 
+        columns = list(
+          hit_id = colDef(
+            name = "Top Hit Database ID", 
+            minWidth = 250,
+            html = TRUE,
+            cell = generate_bold_link
+          ),
+          top_id = colDef(name = "Organism", minWidth = 140, style = list(fontWeight = "bold")),
+          taxonomy = colDef(name = "Taxonomic Lineage", minWidth = 350, style = list(color = "#7f848e", fontSize = "11px")),
+          pident = colDef(name = "Identity", width = 85, format = colFormat(digits = 2, suffix = "%")),
+          qcovhsp = colDef(name = "Cover", width = 75, format = colFormat(digits = 0, suffix = "%")),
+          evalue = colDef(name = "E-value", width = 85, cell = function(value) sprintf("%.2e", value)),
+          bitscore = colDef(name = "Bit Score", width = 85, format = colFormat(digits = 1)),
+          overlap = colDef(name = "Overlap", width = 80),
+          mismatch = colDef(name = "Mismatch", width = 90),
+          gaps = colDef(name = "Gaps", width = 60)
+        )
+      )
+    )
+  }
+)
+```
