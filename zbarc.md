@@ -1,0 +1,26 @@
+# NA
+
+sequence_mapper.R needs cleaning with imports
+
+sequence_mapper.R will require zproj to work because it has to have a
+predictable database structure to find the correct tables???
+
+concat_alignment: give include strategy some default option: if it’s
+“all”, default to all loci
+
+concat_alignment: column and loci specifying: make it consistent,
+currently has gene_loci and loci.
+
+test_sub_model: refactor with
+[`system()`](https://rdrr.io/r/base/system.html)
+
+concat_alignment: as taxa are now named by their isolate names (not
+sequence name anymore), there are invalid character rejected by mrbayes.
+add `mrbayes_safe_name` to handle this and note down original name and
+safe name LUT for later tree plotting look up
+
+add a report function `tree_summary`, show labs, size, dims, etc.
+
+we need report and summary functions that write down basic information
+for many steps!! when importing an alignment, give summaries!! when
+concatenating, write down summary report!!
