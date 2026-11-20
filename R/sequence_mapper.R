@@ -13,7 +13,7 @@ generate_sequence_map <- function(
     col_id_sequence
 ) {
     # Generate wide table
-        sequence.map <- metadata.sequence %>%
+    sequence.map <- metadata.sequence %>%
         dplyr::filter(!is.na({{ col_gene }})) %>%
         tidyr::pivot_wider(
             id_cols = {{ col_id_specimen }},
@@ -31,6 +31,7 @@ generate_sequence_map <- function(
 #' @import dplyr
 #' @import purrr
 #' @import tidyr
+#' @export
 generate_sequence_LUT <- function() {
     specmeta <- zhutilsr::db_pull("metadata.Specimen.Haploniscidae")
     sequence.map <- zhutilsr::db_pull("sequence.map", F, T)
@@ -94,6 +95,7 @@ generate_sequence_LUT <- function() {
     # dplyr::mutate(c_organism_label = dplyr::case_when(stringr::str_detect(identifier, "^[A-Z]{3}[0-9]{3}_") ~ paste(c_organism_label, gsub("_.{3}$", "", identifier), sep = "_"), .default = c_organism_label))
     return(sequence.map.LUT.merged)
 }
+
 
 generate_orglab_LUT <- function(tip.taxa) {
     seqmap <- zhutilsr::db_pull("sequence.map")
