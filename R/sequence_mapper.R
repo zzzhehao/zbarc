@@ -27,10 +27,7 @@ generate_sequence_map <- function(
 
 
 #' Generate Sequence Metadata LUT
-#'
-#' @import dplyr
-#' @import purrr
-#' @import tidyr
+#' 
 #' @export
 generate_sequence_LUT <- function() {
     specmeta <- zhutilsr::db_pull("metadata.Specimen.Haploniscidae")
