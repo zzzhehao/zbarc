@@ -43,6 +43,8 @@ Suggests:
 Additional_repositories:
     http://R-Forge.R-project.org
 Remotes: 
-    zzzhehao/zhutilsr@dev
+    zzzhehao/zhutilsr@dev,
+    roblanf/sangeranalyseR,
+    tomezard/splits
 Config/roxygen2/version: 8.1.1.9000
 URL: https://zzzhehao.github.io/zbarc/
