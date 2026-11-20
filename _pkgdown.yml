@@ -1,0 +1,86 @@
+url: ~
+template:
+  bootstrap: 5
+
+reference:
+  - title: Data Retrieval (BOLD & GenBank)
+    desc: Query, download, and parse records from BOLD and INSD XML files.
+    contents:
+      - bold_get_query
+      - bold_validate_query
+      - bold_get_token
+      - bold_download
+      - bold_read_data
+      - bold_write_data
+      - bold_retrieve
+      - load_insd
+
+  - title: Local BLAST
+    desc: Build local nucleotide databases from BOLD data and run BLAST searches.
+    contents:
+      - bcdm2blastdb
+      - blast
+
+  - title: Sequence Assembly, Alignment & Trimming
+    desc: Wrappers and utilities for Sanger reads, MAFFT, Gblocks, and alignment editing.
+    contents:
+      - assemble_map_reference
+      - mafft
+      - gblocks
+      - polish_alignment
+      - check_polish
+      - codon_summary
+      - trim_empty_columns
+      - clean_label
+      - convert_nexus2fasta
+      - summarize_alignment
+      - merge_fasta
+
+  - title: Species Delimitation (ABGD, ASAP, GMYC)
+    desc: Run and parse delimitation analyses across multiple methods.
+    contents:
+      - abgd_execute
+      - abgd_disthist
+      - abgd_read_result
+      - abgd_read_result_all
+      - abgd_summary
+      - abgd_delim
+      - asap_execute
+      - asap
+      - asap_evaluate
+      - gmyc_eval
+
+  - title: Phylogenetics (MrBayes, BEAST2, IQ-TREE)
+    desc: Prepare NEXUS/MRCA inputs and run model selection or tree workflows.
+    contents:
+      - mrbayes
+      - prepare_mrbayes_nexus
+      - beast2_write_mrca
+      - test_sub_model
+      - midwayTreeViz
+      - read_contree_mrbayes
+      - tree_reroot
+
+  - title: Tree & Heatmap Visualization
+    desc: Relabel tips and render phylogenetic trees with annotation heatmaps.
+    contents:
+      - tree_relabel
+      - tree_visualize
+      - tree_annotate
+      - .tree_calc_offsets
+      - .tree_prep_labels
+      - .tree_visualize_base
+
+  - title: Metadata Mapping & Filtering
+    desc: Link sequences to specimens and filter alignments by metadata.
+    contents:
+      - generate_sequence_map
+      - concatenate_alignment
+      - split_concat_alignment
+      - exclude_by_meta
+
+  - title: Quarto Reports
+    desc: Render HTML reports for BLAST, BOLD, distance, and barcoding workflows.
+    contents:
+      - render_report
+      - render_report_barcode

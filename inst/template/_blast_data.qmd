@@ -1,0 +1,78 @@
+```{r setup_and_parse}
+#| echo: false
+#| output: false
+library(jsonlite)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+
+# 1. Function to parse a single JSON file into a flat dataframe
+parse_blast_file <- function(file_path) {
+  js <- fromJSON(file_path, simplifyVector = FALSE)
+  if(is.null(js$BlastOutput2)) return(tibble())
+  
+  map_dfr(js$BlastOutput2, function(b) {
+    search <- b$report$results$search
+    q_id <- search$query_id
+    q_title <- search$query_title
+    q_len <- search$query_len
+    
+    if (length(search$hits) == 0) return(tibble()) 
+    
+    map_dfr(search$hits, function(hit) {
+      desc <- hit$description[[1]]
+      map_dfr(hit$hsps, function(hsp) {
+        tibble(
+          query_title = q_title, query_id = q_id, query_len = q_len,
+          hit_num = hit$num, hit_acc = desc$accession,
+          hit_title = desc$title, sciname = desc$sciname,
+          hsp_num = hsp$num, bit_score = hsp$bit_score, score = hsp$score,
+          evalue = hsp$evalue, identity = hsp$identity, align_len = hsp$align_len,
+          q_from = hsp$query_from, q_to = hsp$query_to, h_from = hsp$hit_from, h_to = hsp$hit_to,
+          q_strand = hsp$query_strand, h_strand = hsp$hit_strand, gaps = hsp$gaps,
+          qseq = hsp$qseq, hseq = hsp$hseq, midline = hsp$midline
+        )
+      })
+    })
+  })
+}
+
+# 2. Load and combine data, and calculate custom display columns
+blast_hits <- map_dfr(blast_files, function(f) {
+  if (file.exists(f)) {
+    parse_blast_file(f) %>% mutate(source_file = basename(f))
+  } else {
+    warning(paste("File not found:", f))
+    tibble()
+  }
+})
+
+if(nrow(blast_hits) == 0) {
+  stop("No valid BLAST results found in the provided JSON files.")
+}
+
+blast_hits <- blast_hits %>%
+  mutate(
+    cov_pct = (abs(q_to - q_from) + 1) / query_len * 100,
+    cov_display = sprintf("%.0f%%", cov_pct),
+    ident_pct = (identity / align_len) * 100,
+    ident_display = sprintf("%.1f%% (%d/%d)", ident_pct, identity, align_len)
+  )
+
+# 3. Create Main Summary Table
+summary_blast_df <- blast_hits %>%
+  group_by(query_title) %>%
+  arrange(evalue, desc(bit_score)) %>%
+  slice(1) %>%
+  ungroup() %>%
+  select(query_title, hit_acc, sciname, bit_score, evalue, ident_display, cov_display, align_len)
+
+# Dynamic theme connecting reactable to our custom One Dark Pro CSS variables
+dynamic_theme <- reactableTheme(
+  color = "var(--tbl-text)",
+  backgroundColor = "var(--tbl-bg)",
+  borderColor = "var(--tbl-border)",
+  stripedColor = "var(--tbl-stripe)",
+  highlightColor = "var(--tbl-highlight)",
+  cellPadding = "8px 12px"
+)

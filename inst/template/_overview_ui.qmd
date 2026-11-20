@@ -1,0 +1,46 @@
+```{r}
+#| echo: false
+#| message: false
+
+# Safely extract base sequences from whichever data successfully loaded
+all_seqs <- c()
+if (exists("motu_df")) all_seqs <- c(all_seqs, motu_df$query_id)
+if (exists("summary_bold_df")) all_seqs <- c(all_seqs, summary_bold_df$query_id)
+if (exists("summary_blast_df")) all_seqs <- c(all_seqs, summary_blast_df$query_title)
+
+overview_df <- data.frame(query_id = unique(all_seqs))
+
+# Merge BOLD top hits if available
+if (exists("summary_bold_df")) {
+  overview_df <- dplyr::left_join(
+    overview_df, 
+    summary_bold_df %>% dplyr::select(query_id, BOLD_ID = top_id, BOLD_Hit = hit_id), 
+    by = "query_id"
+  )
+}
+
+# Merge Distance MOTUs if available
+if (exists("motu_df")) {
+  overview_df <- dplyr::left_join(overview_df, motu_df, by = "query_id")
+}
+
+# Merge User Metadata if provided
+if (!is.null(params$metadata_path) && params$metadata_path != "" && params$key_col != "") {
+  user_meta <- readRDS(params$metadata_path)
+  user_meta <- user_meta %>% dplyr::rename(query_id = !!dplyr::sym(params$key_col))
+  overview_df <- dplyr::left_join(overview_df, user_meta, by = "query_id")
+}
+
+reactable::reactable(
+  overview_df,
+  theme = dynamic_theme,
+  highlight = TRUE,
+  compact = TRUE,
+  filterable = TRUE,
+  columns = list(
+    query_id = reactable::colDef(name = "Sequence Name", minWidth = 150, sticky = "left"),
+    BOLD_ID = reactable::colDef(name = "BOLD Result", minWidth = 150),
+    motu = reactable::colDef(name = "MOTU Cluster", minWidth = 100)
+  )
+)
+```

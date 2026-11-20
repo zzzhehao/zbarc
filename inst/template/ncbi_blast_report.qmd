@@ -1,0 +1,29 @@
+---
+title: "NCBI BLAST Report"
+format: 
+  html:
+    theme: 
+      light: flatly
+      dark: darkly
+    page-layout: custom
+    toc: false
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+params:
+  description: 
+    value: ""
+  input: 
+    value: []
+---
+
+
+```{r}
+#| output: false
+blast_files <- params$input
+```
+
+{{< include _blast_data.qmd >}}
+{{< include _blast_ui.qmd >}}

@@ -1,0 +1,100 @@
+```{r}
+#| output: false
+
+library(ape)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(rcartocolor)
+
+# 1. Helper function to extract and melt distance matrices
+get_dist_df <- function(dna, model_name, model_code) {
+    d <- dist.dna(dna, model = model_code, as.matrix = TRUE, pairwise.deletion = TRUE)
+    diag(d) <- NA
+    as.data.frame(as.table(d)) %>%
+        filter(!is.na(Freq)) %>%
+        rename(seq1 = Var1, seq2 = Var2, !!model_name := Freq) %>%
+        mutate(across(c(seq1, seq2), as.character))
+}
+
+# Helper to get square matrix
+get_dist_matrix <- function(dna, model_code) {
+    d <- dist.dna(dna, model = model_code, as.matrix = TRUE, pairwise.deletion = TRUE)
+    return(d)
+}
+
+# 2. Process Files
+# 2. Process Files
+motu_list <- list() # ADD THIS to capture MOTUs
+
+all_distances <- map_dfr(fasta_files, function(f) {
+  if (!file.exists(f)) return(tibble())
+  dna <- read.dna(f, format = "fasta")
+  
+  # Calculate MOTUs
+  d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
+  if(any(is.na(d_raw_dist))) {
+     max_d <- max(d_raw_dist, na.rm = TRUE)
+     d_raw_dist[is.na(d_raw_dist)] <- if(is.infinite(max_d)) 1 else max_d
+  }
+  hc <- hclust(d_raw_dist, method = "average")
+  motu_clusters <- cutree(hc, h = 0.05)
+  date_str <- format(Sys.Date(), "%Y%m%d")
+  
+  # CAPTURE MOTU FOR THE OVERVIEW TAB:
+  motu_list[[basename(f)]] <<- data.frame(
+    query_id = names(motu_clusters), 
+    motu = sprintf("%s-%s", date_str, motu_clusters),
+    stringsAsFactors = FALSE
+  )
+  
+  seq_motu_map <- setNames(sprintf("%s (%s-%s)", names(motu_clusters), date_str, motu_clusters), names(motu_clusters))
+  
+  p_dist <- get_dist_df(dna, "p_distance", "raw")
+  k80    <- get_dist_df(dna, "K80", "K80")
+  jc69   <- get_dist_df(dna, "JC69", "JC69")
+  tn93   <- get_dist_df(dna, "TN93", "TN93")
+  t92    <- get_dist_df(dna, "T92", "T92")
+  
+  p_dist %>% left_join(k80, by = c("seq1", "seq2")) %>%
+    left_join(jc69, by = c("seq1", "seq2")) %>%
+    left_join(tn93, by = c("seq1", "seq2")) %>%
+    left_join(t92, by = c("seq1", "seq2")) %>%
+    mutate(
+      alignment_file = basename(f),
+      seq1 = seq_motu_map[seq1],
+      seq2 = seq_motu_map[seq2]
+    ) %>% select(alignment_file, seq1, seq2, everything())
+})
+
+# Combine lists into a single dataframe for the overview tab
+motu_df <- dplyr::bind_rows(motu_list)
+
+if(nrow(all_distances) == 0) stop("No valid sequences found in the provided FASTA files.")
+
+# Reactable Theme
+dynamic_theme <- reactableTheme(
+  color = "var(--tbl-text)", backgroundColor = "var(--tbl-bg)",
+  borderColor = "var(--tbl-border)", stripedColor = "var(--tbl-stripe)",
+  highlightColor = "var(--tbl-highlight)", cellPadding = "8px 12px"
+)
+
+show_file_col <- length(unique(all_distances$alignment_file)) > 1
+all_seqs <- sort(unique(c(all_distances$seq1, all_distances$seq2)))
+all_seqs_escaped <- gsub("'", "\\\\'", all_seqs)
+
+options_js <- paste0(
+  "React.createElement('option', { value: '' }, 'All'), ",
+  paste0("React.createElement('option', { value: '", all_seqs_escaped, "' }, '", all_seqs_escaped, "')", collapse = ", ")
+)
+
+dropdown_filter <- JS(paste0("
+  function(column, state) {
+    return React.createElement('select', {
+        value: column.filterValue || '',
+        onChange: function(e) { column.setFilter(e.target.value || undefined) },
+        style: { width: '100%', padding: '4px 8px', backgroundColor: 'var(--tbl-bg)', color: 'var(--tbl-text)', border: '1px solid var(--tbl-border)', borderRadius: '4px', fontSize: '12px' }
+      }, ", options_js, ")
+  }
+"))
+```

@@ -1,0 +1,241 @@
+
+```{=html}
+<style>
+  /* Maximize width with minimal margins */
+  body {
+    padding: 1% 2%;
+    max-width: 100%;
+  }
+  #title-block-header {
+    margin-bottom: 20px;
+  }
+  
+  /* Light Mode Palette */
+  :root, body.quarto-light {
+    --tbl-bg: #ffffff;
+    --tbl-text: #333333;
+    --tbl-border: #dfe2e5;
+    --tbl-stripe: #f6f8fa;
+    --tbl-highlight: #e6f2ff;
+    --tbl-details-bg: #fafbfc;
+    --tbl-accent: #0366d6;
+  }
+  
+  /* Dark Mode Palette */
+  html[data-bs-theme="dark"], 
+  body[data-bs-theme="dark"], 
+  body.quarto-dark {
+    --tbl-bg: #282c34;
+    --tbl-text: #abb2bf;
+    --tbl-border: #181a1f;
+    --tbl-stripe: #2c313a;
+    --tbl-highlight: #323842;
+    --tbl-details-bg: #21252b;
+    --tbl-accent: #61afef;
+    background-color: var(--tbl-bg);
+  }
+  
+  /* Matrix Scroll Formatting */
+  .matrix-wrapper {
+    overflow-x: auto;
+    overflow-y: visible; /* Prevents nested vertical scrollbars */
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .metric-selector {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--tbl-border);
+    border-radius: 4px;
+    background-color: var(--tbl-bg);
+    color: var(--tbl-text);
+    margin-bottom: 10px;
+  }
+</style>
+```
+
+:::{.callout-note collapse="true" title="Description"}
+
+`r params$description`
+
+:::
+
+:::{.callout-note collapse="true" title="Input Files Used"}
+
+```{r}
+#| output: asis
+# Convert to full absolute paths for clarity in the report
+full_paths <- normalizePath(fasta_files, mustWork = FALSE)
+cat(paste("- `", full_paths, "`\n", sep=""))
+```
+
+:::
+
+```{r}
+#| echo: false
+#| output: false
+library(ape)
+library(tidyverse)
+library(reactable)
+library(htmltools)
+library(rcartocolor)
+```
+
+::: {.panel-tabset}
+
+## Pairwise Distances Table
+
+```{r}
+#| echo: false
+reactable(
+  all_distances,
+  theme = dynamic_theme,
+  filterable = FALSE, sortable = TRUE, searchable = FALSE,
+  highlight = TRUE, striped = TRUE, compact = TRUE,
+  defaultPageSize = 100, style = list(fontSize = "13px"),
+  columns = list(
+    alignment_file = colDef(name = "Alignment File", show = show_file_col, minWidth = 120),
+    seq1 = colDef(name = "Sequence 1", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
+    seq2 = colDef(name = "Sequence 2", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
+    p_distance = colDef(name = "Uncorrected (p)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+    K80 = colDef(name = "Kimura 2-P (K80)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+    JC69 = colDef(name = "Jukes-Cantor (JC69)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+    TN93 = colDef(name = "Tamura-Nei (TN93)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+    T92 = colDef(name = "Tamura 3-P (T92)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value)
+  )
+)
+```
+
+## MOTU Genetic Distance Matrix
+
+```{r}
+#| echo: false
+#| results: asis
+
+# Generate sunset palette function
+pal_sunset <- carto_pal(7, "Sunset")
+color_ramp <- colorRamp(pal_sunset)
+
+# Helper function to generate RGBA colors dynamically (opacity 0.2)
+get_rgba <- function(val, max_val) {
+  if (is.na(val) || !is.numeric(val)) return("transparent")
+  norm_val <- max(0, min(1, val / max_val))
+  rgb <- color_ramp(norm_val)
+  sprintf("rgba(%f, %f, %f, 0.2)", rgb[1], rgb[2], rgb[3])
+}
+
+# Output script for dropdown toggle
+cat('
+<select id="metricDropdown" class="metric-selector" onchange="toggleMetricMatrix()">
+  <option value="raw">Uncorrected (p-distance)</option>
+  <option value="K80">Kimura 2-P (K80)</option>
+  <option value="JC69">Jukes-Cantor (JC69)</option>
+  <option value="TN93">Tamura-Nei (TN93)</option>
+  <option value="T92">Tamura 3-P (T92)</option>
+</select>
+
+<script>
+function toggleMetricMatrix() {
+  var selected = document.getElementById("metricDropdown").value;
+  var matrices = document.getElementsByClassName("dist-matrix");
+  for (var i = 0; i < matrices.length; i++) {
+    matrices[i].style.display = "none";
+  }
+  var active = document.getElementsByClassName("matrix-" + selected);
+  for (var i = 0; i < active.length; i++) active[i].style.display = "block";
+}
+document.addEventListener("DOMContentLoaded", function() { toggleMetricMatrix(); });
+</script>
+')
+
+# Generate matrices per file
+for (f in fasta_files) {
+  if (!file.exists(f)) next
+  
+  dna <- read.dna(f, format = "fasta")
+  
+  # 1. Hclust & MOTU grouping on uncorrected p-distance
+  d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
+  
+  # Handle NAs for hclust by setting them to the maximum distance safely
+  if(any(is.na(d_raw_dist))) {
+     max_d <- max(d_raw_dist, na.rm = TRUE)
+     d_raw_dist[is.na(d_raw_dist)] <- if(is.infinite(max_d)) 1 else max_d
+  }
+  
+  hc <- hclust(d_raw_dist, method = "average")
+  motu_clusters <- cutree(hc, h = 0.05)
+  date_str <- format(Sys.Date(), "%Y%m%d")
+  
+  models <- c("raw" = "raw", "K80" = "K80", "JC69" = "JC69", "TN93" = "TN93", "T92" = "T92")
+  
+  if(length(fasta_files) > 1) {
+    cat(sprintf("\n### File: %s\n\n", basename(f)))
+  }
+  
+  # Group by unique MOTUs
+  unique_motus <- sort(unique(motu_clusters))
+  
+  for (motu_id in unique_motus) {
+    motu_label <- sprintf("%s-%s", date_str, motu_id)
+    seqs_in_motu <- names(motu_clusters)[motu_clusters == motu_id]
+    
+    # Declare MOTU with a markdown heading
+    cat(sprintf("\n#### MOTU: %s\n\n", motu_label))
+    
+    for (m_name in names(models)) {
+      m_code <- models[[m_name]]
+      mat <- get_dist_matrix(dna, m_code)
+      
+      # Subset matrix specifically to this MOTU's sequences
+      mat_sub <- mat[seqs_in_motu, seqs_in_motu, drop = FALSE]
+      
+      # Create Dataframe for Reactable, stripping rownames to avoid duplication
+      df_mat <- as.data.frame(mat_sub)
+      rownames(df_mat) <- NULL 
+      df_mat <- cbind(Sequence = seqs_in_motu, df_mat)
+      
+      max_val <- max(mat_sub, na.rm = TRUE)
+      if(is.infinite(max_val) || max_val == 0) max_val <- 1
+      
+      col_defs <- list(
+        Sequence = colDef(sticky = "left", minWidth = 150, style = list(fontWeight = "bold", backgroundColor = "var(--tbl-bg)"))
+      )
+      
+      for (cname in seqs_in_motu) {
+        col_defs[[cname]] <- colDef(
+          minWidth = 80,
+          format = colFormat(digits = 4),
+          style = function(value) {
+            if(is.nan(value) || is.na(value)) return(list(color = "transparent"))
+            list(backgroundColor = get_rgba(value, max_val))
+          },
+          cell = function(value) {
+            if(is.nan(value) || is.na(value)) "" else formatC(value, format="f", digits=4)
+          }
+        )
+      }
+      
+      cat(sprintf('<div class="dist-matrix matrix-%s matrix-wrapper" style="display: none;">\n', m_name))
+      
+      tbl <- reactable(
+        df_mat,
+        theme = dynamic_theme,
+        rownames = FALSE,       
+        pagination = FALSE,
+        sortable = FALSE,       
+        compact = TRUE,
+        fullWidth = FALSE,      # <-- added to prevent table stretching across entire page
+        columns = col_defs,
+        style = list(fontSize = "13px") # <-- updated for slightly larger font
+      )
+      
+      print(htmltools::tagList(tbl))
+      cat('</div>\n')
+    }
+  }
+}
+```
+
+:::

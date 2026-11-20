@@ -1,0 +1,138 @@
+---
+title: "Combined Barcoding Report"
+format: 
+  html:
+    theme: 
+      light: flatly
+      dark: darkly
+    page-layout: custom
+    toc: false
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+params:
+  description: 
+    value: ""
+  bold_input: 
+    value: []
+  blast_input: 
+    value: []
+  fasta_input: 
+    value: []
+  metadata_path: 
+    value: ""
+  key_col: 
+    value: ""
+---
+
+```{=html}
+<style>
+  /* Maximize width with minimal margins */
+  body {
+    padding: 1% 2%;
+    max-width: 100%;
+  }
+  #title-block-header {
+    margin-bottom: 20px;
+  }
+  
+  /* Light Mode Palette (Default Flatly-compatible) */
+  :root, body.quarto-light {
+    --tbl-bg: #ffffff;
+    --tbl-text: #333333;
+    --tbl-border: #dfe2e5;
+    --tbl-stripe: #f6f8fa;
+    --tbl-highlight: #e6f2ff;
+    --tbl-details-bg: #fafbfc;
+    --tbl-accent: #0366d6;
+  }
+  
+  /* Dark Mode Palette (One Dark Pro / Aion Theme) */
+  html[data-bs-theme="dark"], 
+  body[data-bs-theme="dark"], 
+  body.quarto-dark {
+    --tbl-bg: #282c34;
+    --tbl-text: #abb2bf;
+    --tbl-border: #181a1f;
+    --tbl-stripe: #2c313a;
+    --tbl-highlight: #323842;
+    --tbl-details-bg: #21252b;
+    --tbl-accent: #61afef;
+    background-color: var(--tbl-bg);
+  }
+  
+  /* Fix reactable details row background bleed */
+  .rt-tr-details {
+    background-color: var(--tbl-details-bg) !important;
+  }
+
+  /* Link hover styling */
+  a.bold-link:hover {
+    filter: brightness(1.2);
+    text-decoration: underline !important;
+  }
+
+    /* Matrix Scroll Formatting */
+  .matrix-wrapper {
+    overflow-x: auto;
+    overflow-y: visible; /* Prevents nested vertical scrollbars */
+    width: 100%;
+    margin-top: 15px;
+  }
+  
+  .metric-selector {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid var(--tbl-border);
+    border-radius: 4px;
+    background-color: var(--tbl-bg);
+    color: var(--tbl-text);
+    margin-bottom: 10px;
+  }
+</style>
+```
+
+:::{.callout-note collapse="true" title="Description"}
+`r params$description`
+:::
+
+```{r}
+#| echo: false
+# Map params to the variables expected by the partials
+bold_files <- params$bold_input
+blast_files <- params$blast_input
+fasta_files <- params$fasta_input
+
+# Theme needed for all reactable partials
+dynamic_theme <- reactable::reactableTheme(
+  color = "var(--tbl-text)", backgroundColor = "var(--tbl-bg)",
+  borderColor = "var(--tbl-border)", stripedColor = "var(--tbl-stripe)",
+  highlightColor = "var(--tbl-highlight)", cellPadding = "8px 12px"
+)
+```
+
+{{< include _bold_data.qmd >}}
+{{< include _blast_data.qmd >}}
+{{< include _distance_data.qmd >}}
+
+::: {.panel-tabset}
+
+## Overview & Metadata
+
+{{< include _overview_ui.qmd >}}
+
+## BOLD Barcode ID
+
+{{< include _bold_ui.qmd >}}
+
+## NCBI BLAST
+
+{{< include _blast_ui.qmd >}}
+
+## Genetic Distance
+
+{{< include _distance_ui.qmd >}}
+
+:::
