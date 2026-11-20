@@ -36,6 +36,10 @@ mafft <- function(
 }
 
 #' Polish alignment
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#' This function is deprecated in 0.0.1.9001 because alignment polishing, at least in DNA barcoding, should be done manually with visual inspection. 
+#' 
 #' @param aln DNAbin class object. Alignment to polish. 
 #' @return DNAbin class object. Polished alignment. 
 #' @export
@@ -43,6 +47,10 @@ polish_alignment <- function(
     aln,
     verbose = T
 ) {
+lifecycle::deprecate_warn(
+        when = "0.0.1.9001",
+        what = "polish_alignment()"
+    )
     aln_mat <- do.call(rbind, as.character(aln))
 
     # insertions
