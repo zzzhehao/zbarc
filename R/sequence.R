@@ -35,73 +35,168 @@ clean_label <- function(fasta_path, noprefix = F){
     return(new_fasta_path)
 }
 
-#' Run Gblocks to Trim the Alignment
+
+#' Wrapper function for Gblocks
 #' 
 #' @description
-#' This is a wrapper function to call Gblocks in CLI. For details about the program please visit: https://home.cc.umanitoba.ca/~psgendb/doc/Castresana/Gblocks_documentation.html
+#' User-facing wrapper for Gblocks. It automatically formats the output filename 
+#' to avoid Gblocks' quirky \code{.fasta-gb} extension (e.g., rewriting it 
+#' cleanly to \code{_gb.fasta}), executes the alignment trimming, and returns 
+#' the path to the resulting FASTA file.
 #' 
-#' @param fasta_path File path of the alignment FASTA file.
-#' @param gblocks_path File path of the Gblocks excutable.
-#' @param t Type of sequence. Gblocks command line parameter, will be passed over as `-t`.
-#' @param b1 Minimum number of sequence for a conserved position (>= 50%+1 of the number of sequences, default 50%+1 of the number of sequences). Gblocks command line parameter, will be passed over as `-b1`. Also accepts `min` to choose the lowest value, which maximize the selected number of positions (i.e. least aggressive in trimming).
-#' @param b2 Minumum number of sequences for a flank position (>= b1, default 85% of the number of sequences). Gblocks command line parameter, will be passed over as `-b2`. Also accepts `min` to choose the lowest value, which maximize the selected number of positions (i.e. least aggressive in trimming).
-#' @param b3 Maximum number of contiguous nonconserved positions (gblocks default to 8, here default to 20). Bigger values increase the selected number of positions.
-#' @param b4 Minimum length of a block after gap cleaning (gblocks default to 10, minimum value 2, here default to 2). Bigger values decrease the selected number of position. 
-#' @param b5 Allowe gap positions. `n` for absolute no gap positions allowed in the final alignment. `h` for only positions where 50% or more of the sequens have a gap are treated as gap position and are eliminated. `a` for all gap positions can be selected, no positions are eliminated becaused of the gaps.
-#' @param args Other arguments that are passed directly to CLI command. 
+#' @param input Path to input FASTA file.
+#' @param output Optional. Custom path for the output FASTA file. If \code{NULL} (default), 
+#'   automatically appends \code{_gb} before the input file's extension.
+#' @param t Type of sequence: \code{"d"} (DNA), \code{"p"} (Protein), or \code{"c"} (Codons). Default is \code{"d"}.
+#' @param b1 Minimum number of sequences for a conserved position. If \code{"min"}, calculated as \code{ceiling(n_seq / 2) + 1}.
+#' @param b2 Minimum number of sequences for a flank position. If \code{"min"}, defaults to the value of \code{b1}.
+#' @param b3 Maximum number of contiguous nonconserved positions. Default is \code{20}.
+#' @param b4 Minimum length of a block. Default is \code{2}.
+#' @param b5 Allowed gap positions: \code{"a"} (All), \code{"h"} (Half), or \code{"n"} (None). Default is \code{"a"}.
+#' @param args Additional arguments passed to Gblocks. Should be a character vector.
+#' @param exec Path or command to the Gblocks executable. Defaults to \code{"Gblocks"}.
+#' @param browse Logical. If \code{TRUE}, the HTML visualization will be opened in the browser.
 #' 
-#' 
-#' @return Trimmed alignment will be written in new FASTA file under the same directory with suffix `_gbtrimmed.fasta`. The path to the new file will be returned.
+#' @return A character string representing the absolute or relative path to the trimmed FASTA alignment.
 #' @export
-exe_gblocks <- function(fasta_path, gblocks_path = "/Users/hu_zhehao/Desktop/Biology-tools/Gblocks_0.91b/Gblocks", t="d", b1="min", b2="min", b3=20, b4=2, b5="a", args=""){
-    MSA.dirname <- dirname(fasta_path)
-    genes <- c("18S", "28S", "18s", "28s")
-    gene <- genes[stringr::str_detect(basename(fasta_path), paste(genes, sep = "|"))]
-
-    b1 <- as.character(b1)
-    b2 <- as.character(b2)
-
-    if (b1 == "min") {
-        nseq <- length(ape::read.FASTA(fasta_path))
-        b1 <- ceiling(nseq/2)+1
+gblocks <- function(
+    input,
+    output = NULL,
+    t = "d",
+    b1 = "min",
+    b2 = "min",
+    b3 = 20,
+    b4 = 2,
+    b5 = "a",
+    args = NULL,
+    exec = "Gblocks",
+    browse = TRUE
+) {
+    if (is.null(output)) {
+        if (grepl("\\.[a-zA-Z0-9]+$", input)) {
+            output <- sub("(\\.[a-zA-Z0-9]+)$", "_gb\\1", input)
     } else {
-        b1 <- as.numeric(b1)
-        if (is.na(b1)) {stop("Argument b1 only accepts number or `min`")}
+        output <- paste0(input, "_gb")
+        }
     }
-    if (b2 == "min") {
-        b2 <- b1
-    } else {
+    
+    output_htm <- paste0(output, ".html")
+
+    .gblocks(
+        input = input,
+        output = output,
+        t = t,
+        b1 = b1,
+        b2 = b2,
+        b3 = b3,
+        b4 = b4,
+        b5 = b5,
+        args = args,
+        exec = exec,
+        browse = browse
+    )
+
+    cat("Trimmed alignment successfully saved to:\n  ", output, "\n")
+    if (file.exists(output_htm)) {
+        cat("HTML visualization saved to:\n  ", output_htm, "\n")
+    }
+
+    return(output)
+}
+
+.gblocks <- function(
+    input,
+    output,
+    t = "d",
+    b1 = "min",
+    b2 = "min",
+    b3 = 20,
+    b4 = 2,
+    b5 = "a",
+    args = NULL,
+    exec = "Gblocks",
+    browse = TRUE
+) {
+    # 1. Input validation & convert to absolute path
+    if (!file.exists(input)) {
+        stop("Input file does not exist: ", input)
+    }
+    input <- normalizePath(input, mustWork = TRUE)
+    
+    # 2. Calculate dynamic b1 and b2 ('min' parameters)
+    if (b1 == "min" || b2 == "min") {
+        nseq <- length(ape::read.FASTA(input))
+        if (b1 == "min") b1 <- ceiling(nseq / 2) + 1
+        if (b2 == "min") b2 <- b1
+    }
+    
+    b1 <- as.numeric(b1)
         b2 <- as.numeric(b2)
-        if (is.na(b2)) {stop("Argument b2 only accepts number or `min`")}
+
+        if (is.na(b1) || is.na(b2)) {
+        stop("Arguments 'b1' and 'b2' must be numeric or 'min'.")
     }
 
-    parameters <- paste0("-t=", t, " -b1=", b1, " -b2=", b2, " -b3=", b3, " -b4=", b4, " -b5=", b5, " ", args)
-    cat("Parameter used: ", parameters, sep = "")
-    gblocks.cmd <- paste(
-        gblocks_path,
-        fasta_path, parameters) 
+    # 3. Setup temporary logs and identify Gblocks auto-generated files
+    gblocks.err <- tempfile("gblockserr", fileext = ".txt")
+    gblocks_auto_out <- paste0(input, "-gb")
+    gblocks_auto_htm <- paste0(input, "-gb.htm")
+    output_htm <- paste0(output, ".htm")
     
-    gblocks.cmd.basename <- paste0(MSA.dirname,"/gblocksCMD_", gene, ".sh")
-    write(gblocks.cmd, gblocks.cmd.basename)
-    
-    system(paste0("sh ", gblocks.cmd.basename))
-    
-    files <- list.files(MSA.dirname, full.names = T)
-    geneFile <- files[stringr::str_detect(files, gene)]
-    print(files)
-    gbFile <- geneFile[stringr::str_detect(geneFile, pattern = "fasta-gb$")]
-    if (length(gbFile) > 1) {
-        cli::cli_abort("Multiple fasta-gb files.")
-    } else if (length(gbFile) == 0) {
-        cli::cli_abort("No fasta-gb files.")
+    # Ensure temporary and auto-generated files in the input directory are cleaned up 
+    # (they will be removed if the function crashes before they are relocated to `output`)
+    on.exit({
+        unlink(gblocks.err)
+        if (file.exists(gblocks_auto_out)) unlink(gblocks_auto_out)
+        if (file.exists(gblocks_auto_htm)) unlink(gblocks_auto_htm)
+    }, add = TRUE)
+
+    # 4. Construct the argument vector for system2
+    cmd_args <- c(
+        input,
+        paste0("-t=", t),
+        paste0("-b1=", b1),
+        paste0("-b2=", b2),
+        paste0("-b3=", b3),
+        paste0("-b4=", b4),
+        paste0("-b5=", b5),
+        args
+    )
+
+    # 5. Execute Gblocks
+    status_code <- suppressWarnings(
+        system2(
+            command = exec,
+            args = cmd_args,
+            stdout = gblocks.err, 
+            stderr = gblocks.err  
+        )
+    )
+
+    # 6. Error handling: check if output was actually generated
+    if (!file.exists(gblocks_auto_out)) {
+        err_msg <- paste(readLines(gblocks.err), collapse = "\n")
+        stop("Gblocks failed to generate output. Exit status: ", status_code, 
+             "\nCommand attempted: ", paste(c(exec, cmd_args), collapse = " "),
+             "\nGblocks Console Log:\n", err_msg)
     }
-    
-    trimAln <- ape::read.FASTA(gbFile)
-    
-    new_fasta_name <- gsub(".fasta-gb$", "_gbtrimmed.fasta", gbFile)
-    
-    ape::write.FASTA(trimAln, new_fasta_name)
-    return(new_fasta_name)
+
+    # 7. Relocate standard FASTA output to user's desired destination
+    file.copy(gblocks_auto_out, output, overwrite = TRUE)
+    unlink(gblocks_auto_out) # Clean it up manually so on.exit doesn't try to find it
+
+    # 8. Relocate HTML visualization and open in browser if requested
+    if (file.exists(gblocks_auto_htm)) {
+        file.copy(gblocks_auto_htm, output_htm, overwrite = TRUE)
+        unlink(gblocks_auto_htm)
+        
+        if (browse) {
+            # Use normalizePath so the browser gets a valid absolute path for the local file
+            utils::browseURL(normalizePath(output_htm, mustWork = TRUE))
+        }
+    }
+
+    return(invisible(status_code))
 }
 
 #' Convert NEXUS alignment to FASTA alignment
