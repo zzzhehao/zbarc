@@ -271,7 +271,7 @@ bold_retrieve <- function(
         base_step <- (i - 1L) * 4L
 
         # 1. Validate
-        cli::cli_progress_update(at = base_step + 1L, status = paste0(chunk_tag, "1/4 Validating query..."))
+        cli::cli_progress_update(set = base_step + 1L, status = paste0(chunk_tag, "1/4 Validating query..."))
         valid_res <- bold_validate_query(q_chunk)
         valid_query <- valid_res$successful_terms %>%
         purrr::map_chr(~ .x$matched) %>%
@@ -280,19 +280,21 @@ bold_retrieve <- function(
 
         if (!nzchar(valid_query)) {
             cli::cli_alert_warning("{chunk_tag}No successful terms matched; skipping.")
+            # Advance past the remaining steps of this skipped chunk so progress stays aligned
+            cli::cli_progress_update(set = base_step + 4L)
             next
         }
 
         # 2. Get Token
-        cli::cli_progress_update(at = base_step + 2L, status = paste0(chunk_tag, "2/4 Requesting token..."))
+        cli::cli_progress_update(set = base_step + 2L, status = paste0(chunk_tag, "2/4 Requesting token..."))
         token <- bold_get_token(valid_query, extent = extent)
 
         # 3. Download
-        cli::cli_progress_update(at = base_step + 3L, status = paste0(chunk_tag, "3/4 Downloading records..."))
+        cli::cli_progress_update(set = base_step + 3L, status = paste0(chunk_tag, "3/4 Downloading records..."))
         raw_text <- bold_download(token, format = format)
 
         # 4. Read into R
-        cli::cli_progress_update(at = base_step + 4L, status = paste0(chunk_tag, "4/4 Parsing data..."))
+        cli::cli_progress_update(set = base_step + 4L, status = paste0(chunk_tag, "4/4 Parsing data..."))
         dfs[[i]] <- bold_read_data(raw_text, format = format)
     }
 
