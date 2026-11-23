@@ -1,241 +1,756 @@
-
-```{=html}
-<style>
-  /* Maximize width with minimal margins */
-  body {
-    padding: 1% 2%;
-    max-width: 100%;
-  }
-  #title-block-header {
-    margin-bottom: 20px;
-  }
-  
-  /* Light Mode Palette */
-  :root, body.quarto-light {
-    --tbl-bg: #ffffff;
-    --tbl-text: #333333;
-    --tbl-border: #dfe2e5;
-    --tbl-stripe: #f6f8fa;
-    --tbl-highlight: #e6f2ff;
-    --tbl-details-bg: #fafbfc;
-    --tbl-accent: #0366d6;
-  }
-  
-  /* Dark Mode Palette */
-  html[data-bs-theme="dark"], 
-  body[data-bs-theme="dark"], 
-  body.quarto-dark {
-    --tbl-bg: #282c34;
-    --tbl-text: #abb2bf;
-    --tbl-border: #181a1f;
-    --tbl-stripe: #2c313a;
-    --tbl-highlight: #323842;
-    --tbl-details-bg: #21252b;
-    --tbl-accent: #61afef;
-    background-color: var(--tbl-bg);
-  }
-  
-  /* Matrix Scroll Formatting */
-  .matrix-wrapper {
-    overflow-x: auto;
-    overflow-y: visible; /* Prevents nested vertical scrollbars */
-    width: 100%;
-    margin-top: 15px;
-  }
-  
-  .metric-selector {
-    padding: 8px 12px;
-    font-size: 14px;
-    border: 1px solid var(--tbl-border);
-    border-radius: 4px;
-    background-color: var(--tbl-bg);
-    color: var(--tbl-text);
-    margin-bottom: 10px;
-  }
-</style>
-```
-
-:::{.callout-note collapse="true" title="Description"}
-
-`r params$description`
-
-:::
-
-:::{.callout-note collapse="true" title="Input Files Used"}
-
-```{r}
-#| output: asis
-# Convert to full absolute paths for clarity in the report
-full_paths <- normalizePath(fasta_files, mustWork = FALSE)
-cat(paste("- `", full_paths, "`\n", sep=""))
-```
-
-:::
-
-```{r}
-#| echo: false
-#| output: false
-library(ape)
-library(tidyverse)
-library(reactable)
-library(htmltools)
-library(rcartocolor)
-```
-
 ::: {.panel-tabset}
 
 ## Pairwise Distances Table
 
-```{r}
+```{r pairwise_dist_tbl}
 #| echo: false
 reactable(
-  all_distances,
-  theme = dynamic_theme,
-  filterable = FALSE, sortable = TRUE, searchable = FALSE,
-  highlight = TRUE, striped = TRUE, compact = TRUE,
-  defaultPageSize = 100, style = list(fontSize = "13px"),
-  columns = list(
-    alignment_file = colDef(name = "Alignment File", show = show_file_col, minWidth = 120),
-    seq1 = colDef(name = "Sequence 1", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
-    seq2 = colDef(name = "Sequence 2", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
-    p_distance = colDef(name = "Uncorrected (p)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
-    K80 = colDef(name = "Kimura 2-P (K80)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
-    JC69 = colDef(name = "Jukes-Cantor (JC69)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
-    TN93 = colDef(name = "Tamura-Nei (TN93)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
-    T92 = colDef(name = "Tamura 3-P (T92)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value)
-  )
+    all_distances,
+    theme = dynamic_theme,
+    filterable = FALSE, sortable = TRUE, searchable = FALSE,
+    highlight = TRUE, striped = FALSE, compact = TRUE,
+    defaultPageSize = 50, style = list(fontSize = "13px"),
+    columns = list(
+        alignment_file = colDef(name = "Alignment File", show = show_file_col, minWidth = 120),
+        seq1 = colDef(name = "Sequence 1", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
+        seq2 = colDef(name = "Sequence 2", minWidth = 200, filterable = TRUE, filterInput = dropdown_filter, style = list(fontWeight = 600, color = "var(--tbl-accent)")),
+        p_distance = colDef(name = "Uncorrected (p)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+        K80 = colDef(name = "Kimura 2-P (K80)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+        JC69 = colDef(name = "Jukes-Cantor (JC69)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+        TN93 = colDef(name = "Tamura-Nei (TN93)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value),
+        T92 = colDef(name = "Tamura 3-P (T92)", format = colFormat(digits = 4), cell = function(value) if(is.nan(value) || is.na(value)) "-" else value)
+    )
 )
 ```
 
-## MOTU Genetic Distance Matrix
+## Intra-MOTU Genetic Distance
 
-```{r}
+```{r intra_motu_matrix}
 #| echo: false
-#| results: asis
 
-# Generate sunset palette function
-pal_sunset <- carto_pal(7, "Sunset")
-color_ramp <- colorRamp(pal_sunset)
+pal_intra <- carto_pal(7, "Sunset")
+ramp_intra <- colorRamp(pal_intra)
 
-# Helper function to generate RGBA colors dynamically (opacity 0.2)
-get_rgba <- function(val, max_val) {
-  if (is.na(val) || !is.numeric(val)) return("transparent")
-  norm_val <- max(0, min(1, val / max_val))
-  rgb <- color_ramp(norm_val)
-  sprintf("rgba(%f, %f, %f, 0.2)", rgb[1], rgb[2], rgb[3])
+get_rgba_palette <- function(val, max_val, ramp_fn, alpha = 0.24) {
+    if (is.na(val) || !is.numeric(val) || !is.finite(val)) return("transparent")
+    denom <- if (is.na(max_val) || !is.finite(max_val) || max_val <= 0) 1 else max_val
+    norm_val <- max(0, min(1, val / denom))
+    rgb <- ramp_fn(norm_val)
+    sprintf("rgba(%f, %f, %f, %s)", rgb[1], rgb[2], rgb[3], alpha)
 }
 
-# Output script for dropdown toggle
-cat('
-<select id="metricDropdown" class="metric-selector" onchange="toggleMetricMatrix()">
-  <option value="raw">Uncorrected (p-distance)</option>
-  <option value="K80">Kimura 2-P (K80)</option>
-  <option value="JC69">Jukes-Cantor (JC69)</option>
-  <option value="TN93">Tamura-Nei (TN93)</option>
-  <option value="T92">Tamura 3-P (T92)</option>
-</select>
-
-<script>
-function toggleMetricMatrix() {
-  var selected = document.getElementById("metricDropdown").value;
-  var matrices = document.getElementsByClassName("dist-matrix");
-  for (var i = 0; i < matrices.length; i++) {
-    matrices[i].style.display = "none";
-  }
-  var active = document.getElementsByClassName("matrix-" + selected);
-  for (var i = 0; i < active.length; i++) active[i].style.display = "block";
-}
-document.addEventListener("DOMContentLoaded", function() { toggleMetricMatrix(); });
-</script>
-')
-
-# Generate matrices per file
-for (f in fasta_files) {
-  if (!file.exists(f)) next
-  
-  dna <- read.dna(f, format = "fasta")
-  
-  # 1. Hclust & MOTU grouping on uncorrected p-distance
-  d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
-  
-  # Handle NAs for hclust by setting them to the maximum distance safely
-  if(any(is.na(d_raw_dist))) {
-     max_d <- max(d_raw_dist, na.rm = TRUE)
-     d_raw_dist[is.na(d_raw_dist)] <- if(is.infinite(max_d)) 1 else max_d
-  }
-  
-  hc <- hclust(d_raw_dist, method = "average")
-  motu_clusters <- cutree(hc, h = 0.05)
-  date_str <- format(Sys.Date(), "%Y%m%d")
-  
-  models <- c("raw" = "raw", "K80" = "K80", "JC69" = "JC69", "TN93" = "TN93", "T92" = "T92")
-  
-  if(length(fasta_files) > 1) {
-    cat(sprintf("\n### File: %s\n\n", basename(f)))
-  }
-  
-  # Group by unique MOTUs
-  unique_motus <- sort(unique(motu_clusters))
-  
-  for (motu_id in unique_motus) {
-    motu_label <- sprintf("%s-%s", date_str, motu_id)
-    seqs_in_motu <- names(motu_clusters)[motu_clusters == motu_id]
-    
-    # Declare MOTU with a markdown heading
-    cat(sprintf("\n#### MOTU: %s\n\n", motu_label))
-    
-    for (m_name in names(models)) {
-      m_code <- models[[m_name]]
-      mat <- get_dist_matrix(dna, m_code)
-      
-      # Subset matrix specifically to this MOTU's sequences
-      mat_sub <- mat[seqs_in_motu, seqs_in_motu, drop = FALSE]
-      
-      # Create Dataframe for Reactable, stripping rownames to avoid duplication
-      df_mat <- as.data.frame(mat_sub)
-      rownames(df_mat) <- NULL 
-      df_mat <- cbind(Sequence = seqs_in_motu, df_mat)
-      
-      max_val <- max(mat_sub, na.rm = TRUE)
-      if(is.infinite(max_val) || max_val == 0) max_val <- 1
-      
-      col_defs <- list(
-        Sequence = colDef(sticky = "left", minWidth = 150, style = list(fontWeight = "bold", backgroundColor = "var(--tbl-bg)"))
-      )
-      
-      for (cname in seqs_in_motu) {
-        col_defs[[cname]] <- colDef(
-          minWidth = 80,
-          format = colFormat(digits = 4),
-          style = function(value) {
-            if(is.nan(value) || is.na(value)) return(list(color = "transparent"))
-            list(backgroundColor = get_rgba(value, max_val))
-          },
-          cell = function(value) {
-            if(is.nan(value) || is.na(value)) "" else formatC(value, format="f", digits=4)
-          }
-        )
-      }
-      
-      cat(sprintf('<div class="dist-matrix matrix-%s matrix-wrapper" style="display: none;">\n', m_name))
-      
-      tbl <- reactable(
-        df_mat,
-        theme = dynamic_theme,
-        rownames = FALSE,       
-        pagination = FALSE,
-        sortable = FALSE,       
-        compact = TRUE,
-        fullWidth = FALSE,      # <-- added to prevent table stretching across entire page
-        columns = col_defs,
-        style = list(fontSize = "13px") # <-- updated for slightly larger font
-      )
-      
-      print(htmltools::tagList(tbl))
-      cat('</div>\n')
+calc_motu_stats <- function(mat_sub) {
+    n_seq <- nrow(mat_sub)
+    if (n_seq <= 1) {
+        return(list(n_seq = n_seq, n_pairs = 0, mean = 0, median = 0, min = 0, max = 0, sd = NA_real_, var = NA_real_, se = NA_real_))
     }
+    vals <- mat_sub[upper.tri(mat_sub)]
+    vals <- vals[is.finite(vals)]
+    n_p <- length(vals)
+    if (n_p == 0) {
+        return(list(n_seq = n_seq, n_pairs = 0, mean = NA_real_, median = NA_real_, min = NA_real_, max = NA_real_, sd = NA_real_, var = NA_real_, se = NA_real_))
+    }
+    s_sd <- if (n_p > 1) stats::sd(vals) else NA_real_
+    s_var <- if (n_p > 1) stats::var(vals) else NA_real_
+    s_se <- if (n_p > 1) s_sd / sqrt(n_p) else NA_real_
+    list(
+        n_seq = n_seq,
+        n_pairs = n_p,
+        mean = mean(vals),
+        median = stats::median(vals),
+        min = min(vals),
+        max = max(vals),
+        sd = s_sd,
+        var = s_var,
+        se = s_se
+    )
+}
+
+fmt_stat <- function(x) {
+    if (is.null(x) || length(x) == 0 || is.na(x) || !is.finite(x)) "-" else sprintf("%.4f", x)
+}
+
+models <- c("raw" = "raw", "K80" = "K80", "JC69" = "JC69", "TN93" = "TN93", "T92" = "T92")
+date_str <- format(Sys.Date(), "%Y%m%d")
+
+intra_ui_list <- list(
+    htmltools::tags$select(
+        id = "intraMetricDropdown",
+        class = "metric-selector",
+        onchange = "toggleMatrixGroup('intraMetricDropdown', 'intra-matrix')",
+        htmltools::tags$option(value = "raw", "Uncorrected (p-distance)"),
+        htmltools::tags$option(value = "K80", "Kimura 2-P (K80)"),
+        htmltools::tags$option(value = "JC69", "Jukes-Cantor (JC69)"),
+        htmltools::tags$option(value = "TN93", "Tamura-Nei (TN93)"),
+        htmltools::tags$option(value = "T92", "Tamura 3-P (T92)")
+    )
+)
+
+for (f in fasta_files) {
+    if (!file.exists(f)) next
+    dna <- read.dna(f, format = "fasta")
+
+    d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
+    if (any(is.na(d_raw_dist))) {
+        max_d <- max(d_raw_dist, na.rm = TRUE)
+        d_raw_dist[is.na(d_raw_dist)] <- if (is.infinite(max_d)) 1 else max_d
+    }
+
+    hc <- hclust(d_raw_dist, method = "average")
+    motu_clusters <- cutree(hc, h = 0.05)
+
+    if (length(fasta_files) > 1) {
+        intra_ui_list <- append(intra_ui_list, list(
+            htmltools::tags$h3(
+                style = "margin-top: 24px; margin-bottom: 12px; color: var(--tbl-text);",
+                paste("File:", basename(f))
+            )
+        ))
+    }
+
+    for (motu_id in sort(unique(motu_clusters))) {
+        motu_label <- sprintf("%s-%s", date_str, motu_id)
+        anchor_id <- paste0("motu-", gsub("[^A-Za-z0-9_-]", "-", motu_label))
+        seqs_in_motu <- names(motu_clusters)[motu_clusters == motu_id]
+
+        model_blocks <- list()
+
+        for (m_name in names(models)) {
+        mat <- get_dist_matrix(dna, models[[m_name]])
+        mat_sub <- mat[seqs_in_motu, seqs_in_motu, drop = FALSE]
+        st <- calc_motu_stats(mat_sub)
+
+        df_mat <- cbind(
+            Sequence = seqs_in_motu,
+            `rownames<-`(as.data.frame(mat_sub), NULL)
+        )
+
+        max_val <- suppressWarnings(max(mat_sub, na.rm = TRUE))
+        if (!is.finite(max_val) || max_val == 0) max_val <- 1
+
+        col_defs <- list(
+            Sequence = colDef(
+                sticky = "left",
+                minWidth = 150,
+                style = list(fontWeight = "bold", backgroundColor = "var(--tbl-bg)")
+            )
+        )
+
+        for (cname in seqs_in_motu) {
+            col_defs[[cname]] <- colDef(
+            minWidth = 85,
+            style = function(value) {
+                if (is.nan(value) || is.na(value)) return(list(color = "transparent"))
+                list(backgroundColor = get_rgba_palette(value, max_val, ramp_intra, 0.24))
+            },
+            cell = function(value) {
+                if (is.nan(value) || is.na(value)) "" else formatC(value, format = "f", digits = 4)
+            }
+            )
+        }
+
+        tbl <- if (m_name == "raw") {
+            reactable(
+                df_mat,
+                theme = dynamic_theme,
+                rownames = FALSE,
+                pagination = nrow(df_mat) > 40,
+                defaultPageSize = 40,
+                sortable = FALSE,
+                compact = TRUE,
+                fullWidth = FALSE,
+                columns = col_defs,
+                style = list(fontSize = "13px")
+            )
+        } else {
+            hdr_cells <- lapply(names(df_mat), function(col_nm) {
+                htmltools::tags$th(
+                    style = "padding: 4px 8px; border: 1px solid var(--tbl-border); background: var(--tbl-stripe); white-space: nowrap;",
+                    col_nm
+                )
+            })
+            body_rows <- lapply(seq_len(nrow(df_mat)), function(r_i) {
+                tds <- lapply(seq_along(names(df_mat)), function(c_i) {
+                    val <- df_mat[[c_i]][r_i]
+                    if (c_i == 1) {
+                        htmltools::tags$td(
+                            style = "padding: 4px 8px; border: 1px solid var(--tbl-border); font-weight: bold; white-space: nowrap;",
+                            as.character(val)
+                        )
+                    } else {
+                        bg <- if (is.nan(val) || is.na(val)) "transparent" else get_rgba_palette(val, max_val, ramp_intra, 0.24)
+                        txt <- if (is.nan(val) || is.na(val)) "" else formatC(val, format = "f", digits = 4)
+                        htmltools::tags$td(
+                            style = sprintf("padding: 4px 8px; border: 1px solid var(--tbl-border); background-color: %s; white-space: nowrap;", bg),
+                            txt
+                        )
+                    }
+                })
+                htmltools::tags$tr(tds)
+            })
+            htmltools::tags$table(
+                style = "border-collapse: collapse; font-size: 13px; color: var(--tbl-text);",
+                htmltools::tags$thead(htmltools::tags$tr(hdr_cells)),
+                htmltools::tags$tbody(body_rows)
+            )
+        }
+
+        stats_strip <- htmltools::div(
+            style = "display: flex; flex-wrap: wrap; gap: 14px; padding: 6px 10px; margin-bottom: 8px; background-color: var(--tbl-stripe); border: 1px solid var(--tbl-border); border-left: 3px solid var(--tbl-accent); border-radius: 4px; font-size: 12px; color: var(--tbl-text);",
+            htmltools::span(htmltools::strong("Pairs: "), st$n_pairs),
+            htmltools::span(htmltools::strong("Mean: "), fmt_stat(st$mean)),
+            htmltools::span(htmltools::strong("Median: "), fmt_stat(st$median)),
+            htmltools::span(htmltools::strong("Min: "), fmt_stat(st$min)),
+            htmltools::span(htmltools::strong("Max: "), fmt_stat(st$max)),
+            htmltools::span(htmltools::strong("SD: "), fmt_stat(st$sd)),
+            htmltools::span(htmltools::strong("Var: "), fmt_stat(st$var)),
+            htmltools::span(htmltools::strong("SE: "), fmt_stat(st$se))
+        )
+
+        display_style <- if (m_name == "raw") "display: block;" else "display: none;"
+        model_blocks <- append(model_blocks, list(
+            htmltools::div(
+            class = sprintf("intra-matrix intra-matrix-%s", m_name),
+            style = display_style,
+            stats_strip,
+            htmltools::div(class = "matrix-wrapper", style = "margin-top: 6px;", tbl)
+            )
+        ))
+        }
+
+        motu_block <- htmltools::div(
+        id = anchor_id,
+        class = "motu-section-block",
+        style = "margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--tbl-border); scroll-margin-top: 20px;",
+        htmltools::tags$h4(
+            style = "margin: 0 0 8px 0; font-size: 16px; font-weight: 700; color: var(--tbl-accent);",
+            paste0("MOTU: ", motu_label, " "),
+            htmltools::span(
+            style = "font-size: 12px; font-weight: 400; color: var(--tbl-text); opacity: 0.8;",
+            sprintf("(%d sequence%s)", length(seqs_in_motu), if (length(seqs_in_motu) == 1) "" else "s")
+            )
+        ),
+        model_blocks
+        )
+
+        intra_ui_list <- append(intra_ui_list, list(motu_block))
+    }
+}
+
+htmltools::tagList(intra_ui_list)
+```
+
+## Inter-MOTU Genetic Distance
+
+```{r inter_motu_matrix}
+#| echo: false
+
+pal_inter <- carto_pal(7, "TealGrn")
+ramp_inter <- colorRamp(pal_inter)
+ramp_diag <- colorRamp(carto_pal(7, "Sunset"))
+
+inter_ui_list <- list(
+    htmltools::tags$select(
+        id = "interMetricDropdown",
+        class = "metric-selector",
+        onchange = "toggleMatrixGroup('interMetricDropdown', 'inter-matrix')",
+        htmltools::tags$option(value = "raw", "Uncorrected (p-distance)"),
+        htmltools::tags$option(value = "K80", "Kimura 2-P (K80)"),
+        htmltools::tags$option(value = "JC69", "Jukes-Cantor (JC69)"),
+        htmltools::tags$option(value = "TN93", "Tamura-Nei (TN93)"),
+        htmltools::tags$option(value = "T92", "Tamura 3-P (T92)")
+    )
+)
+
+for (f in fasta_files) {
+    if (!file.exists(f)) next
+    dna <- read.dna(f, format = "fasta")
+
+    d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
+    if (any(is.na(d_raw_dist))) {
+        max_d <- max(d_raw_dist, na.rm = TRUE)
+        d_raw_dist[is.na(d_raw_dist)] <- if (is.infinite(max_d)) 1 else max_d
+    }
+
+    hc <- hclust(d_raw_dist, method = "average")
+    motu_clusters <- cutree(hc, h = 0.05)
+    unique_motus <- sort(unique(motu_clusters))
+    motu_labels <- sprintf("%s-%s", date_str, unique_motus)
+    n_m <- length(unique_motus)
+
+    if (length(fasta_files) > 1) {
+            inter_ui_list <- append(inter_ui_list, list(
+            htmltools::tags$h3(
+                style = "margin-top: 24px; margin-bottom: 12px; color: var(--tbl-text);",
+                paste("File:", basename(f))
+            )
+        ))
+    }
+
+    for (m_name in names(models)) {
+        mat <- get_dist_matrix(dna, models[[m_name]])
+        inter_mat <- matrix(NA_real_, nrow = n_m, ncol = n_m, dimnames = list(motu_labels, motu_labels))
+
+        for (i in seq_len(n_m)) {
+            seqs_i <- names(motu_clusters)[motu_clusters == unique_motus[i]]
+            for (j in seq_len(n_m)) {
+                seqs_j <- names(motu_clusters)[motu_clusters == unique_motus[j]]
+                sub_block <- mat[seqs_i, seqs_j, drop = FALSE]
+
+                if (i < j) {
+                    val <- suppressWarnings(max(sub_block, na.rm = TRUE))
+                } else if (i > j) {
+                    val <- suppressWarnings(min(sub_block, na.rm = TRUE))
+                } else {
+                    val <- suppressWarnings(max(sub_block, na.rm = TRUE))
+                }
+                inter_mat[i, j] <- if (is.finite(val)) val else NA_real_
+            }
+        }
+
+        df_inter <- cbind(
+            MOTU = motu_labels,
+            `rownames<-`(as.data.frame(inter_mat), NULL)
+        )
+
+        off_diag_vals <- inter_mat[row(inter_mat) != col(inter_mat)]
+        diag_vals <- diag(inter_mat)
+        max_inter_val <- suppressWarnings(max(off_diag_vals, na.rm = TRUE))
+        max_diag_val <- suppressWarnings(max(diag_vals, na.rm = TRUE))
+        if (!is.finite(max_inter_val) || max_inter_val == 0) max_inter_val <- 1
+        if (!is.finite(max_diag_val) || max_diag_val == 0) max_diag_val <- 1
+
+        col_defs <- list(
+            MOTU = colDef(
+                sticky = "left",
+                minWidth = 140,
+                style = list(fontWeight = "bold", backgroundColor = "var(--tbl-bg)")
+            )
+        )
+
+        for (j_idx in seq_along(motu_labels)) {
+            m_col <- motu_labels[j_idx]
+            col_defs[[m_col]] <- local({
+                col_j <- j_idx
+                colDef(
+                    minWidth = 100,
+                    style = function(value, index) {
+                        if (is.nan(value) || is.na(value)) return(list(color = "transparent"))
+                        if (index == col_j) {
+                            list(
+                                backgroundColor = get_rgba_palette(value, max_diag_val, ramp_diag, 0.28),
+                                fontWeight = "bold"
+                            )
+                        } else {
+                            list(
+                                backgroundColor = get_rgba_palette(value, max_inter_val, ramp_inter, 0.24)
+                            )
+                        }
+                    },
+                    cell = function(value) {
+                        if (is.nan(value) || is.na(value)) "-" else formatC(value, format = "f", digits = 4)
+                    }
+                )
+            })
+        }
+
+        tbl <- if (m_name == "raw") {
+            reactable(
+                df_inter,
+                theme = dynamic_theme,
+                rownames = FALSE,
+                pagination = nrow(df_inter) > 40,
+                defaultPageSize = 40,
+                sortable = FALSE,
+                compact = TRUE,
+                fullWidth = FALSE,
+                columns = col_defs,
+                style = list(fontSize = "13px")
+            )
+        } else {
+            hdr_cells <- lapply(names(df_inter), function(col_nm) {
+                htmltools::tags$th(
+                    style = "padding: 4px 8px; border: 1px solid var(--tbl-border); background: var(--tbl-stripe); white-space: nowrap;",
+                    col_nm
+                )
+            })
+            body_rows <- lapply(seq_len(nrow(df_inter)), function(r_i) {
+                tds <- lapply(seq_along(names(df_inter)), function(c_i) {
+                    val <- df_inter[[c_i]][r_i]
+                    if (c_i == 1) {
+                        htmltools::tags$td(
+                            style = "padding: 4px 8px; border: 1px solid var(--tbl-border); font-weight: bold; white-space: nowrap;",
+                            as.character(val)
+                        )
+                    } else {
+                        is_diag <- (r_i == (c_i - 1L))
+                        bg <- if (is.nan(val) || is.na(val)) {
+                            "transparent"
+                        } else if (is_diag) {
+                            get_rgba_palette(val, max_diag_val, ramp_diag, 0.28)
+                        } else {
+                            get_rgba_palette(val, max_inter_val, ramp_inter, 0.24)
+                        }
+                        txt <- if (is.nan(val) || is.na(val)) "-" else formatC(val, format = "f", digits = 4)
+                        weight_css <- if (is_diag) "font-weight: bold;" else ""
+                        htmltools::tags$td(
+                            style = sprintf(
+                                "padding: 4px 8px; border: 1px solid var(--tbl-border); background-color: %s; %s white-space: nowrap;",
+                                bg, weight_css
+                            ),
+                            txt
+                        )
+                    }
+                })
+                htmltools::tags$tr(tds)
+            })
+            htmltools::tags$table(
+                style = "border-collapse: collapse; font-size: 13px; color: var(--tbl-text);",
+                htmltools::tags$thead(htmltools::tags$tr(hdr_cells)),
+                htmltools::tags$tbody(body_rows)
+            )
+        }
+
+        legend_box <- htmltools::div(
+            style = "margin-top: 10px; padding: 8px 12px; background-color: var(--tbl-stripe); border: 1px solid var(--tbl-border); border-radius: 4px; font-size: 12px; color: var(--tbl-text); display: inline-block;",
+            htmltools::strong("Matrix Legend: "),
+            htmltools::span(style = "margin-left: 8px;", htmltools::strong("Upper Triangle:"), " Maximum inter-MOTU distance (Teal-Green scale) • "),
+            htmltools::span(htmltools::strong("Lower Triangle:"), " Minimum inter-MOTU distance (Teal-Green scale) • "),
+            htmltools::span(htmltools::strong("Diagonal (bold):"), " Maximum intra-MOTU distance (Sunset scale)")
+        )
+
+        display_style <- if (m_name == "raw") "display: block;" else "display: none;"
+        inter_ui_list <- append(inter_ui_list, list(
+            htmltools::div(
+                class = sprintf("inter-matrix inter-matrix-%s matrix-wrapper", m_name),
+                style = display_style,
+                tbl,
+                legend_box
+            )
+        ))
+    }
+}
+
+htmltools::tagList(inter_ui_list)
+```
+
+## MOTU Dendrogram
+
+```{r motu_dendrogram}
+#| echo: false
+
+compute_bootstrap_support <- function(dna, ref_hc, n_boot = 100L, seed = 42L) {
+    ref_phylo <- ape::as.phylo(ref_hc)
+    n_tips <- length(ref_phylo$tip.label)
+    n_int <- ref_phylo$Nnode
+
+    if (n_tips < 3 || n_int < 1 || !is.matrix(dna) || ncol(dna) == 0) {
+        return(rep(NA_real_, max(0L, n_int)))
+    }
+
+    ref_parts <- ape::prop.part(ref_phylo)
+    ref_labels <- ref_phylo$tip.label
+    ref_clades <- lapply(seq_len(n_int), function(idx) {
+        sort(ref_labels[ref_parts[[idx]]])
+    })
+
+    get_clade_signatures <- function(tr) {
+        tr_parts <- ape::prop.part(tr)
+        tr_labels <- tr$tip.label
+        lapply(seq_len(tr$Nnode), function(idx) {
+            sort(tr_labels[tr_parts[[idx]]])
+        })
+    }
+
+    set.seed(seed)
+    support_counts <- integer(n_int)
+    n_sites <- ncol(dna)
+
+    for (b in seq_len(n_boot)) {
+        boot_idx <- sample.int(n_sites, size = n_sites, replace = TRUE)
+        dna_b <- dna[, boot_idx, drop = FALSE]
+
+        d_b <- tryCatch(
+            ape::dist.dna(dna_b, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE),
+            error = function(e) NULL
+        )
+        if (is.null(d_b)) next
+
+        if (any(is.na(d_b))) {
+            max_d_b <- max(d_b, na.rm = TRUE)
+            d_b[is.na(d_b)] <- if (!is.finite(max_d_b)) 1 else max_d_b
+        }
+
+        hc_b <- tryCatch(stats::hclust(d_b, method = "average"), error = function(e) NULL)
+        if (is.null(hc_b)) next
+
+        b_clades <- get_clade_signatures(ape::as.phylo(hc_b))
+        for (k in seq_len(n_int)) {
+            target_set <- ref_clades[[k]]
+            if (any(vapply(b_clades, function(cl) identical(cl, target_set), logical(1)))) {
+                support_counts[k] <- support_counts[k] + 1L
+            }
+        }
+    }
+
+    round(100 * support_counts / n_boot)
+}
+
+build_phylo_ggplot <- function(phylo_obj, hc_order, tip_cols, boot_support, max_depth, n_tips) {
+    edge <- phylo_obj$edge
+    edge_len <- phylo_obj$edge.length
+    n_nodes <- n_tips + phylo_obj$Nnode
+    root_node <- n_tips + 1L
+
+    # Depth from root in full pairwise distance units (2 * edge.length for hclust UPGMA)
+    depth_from_root <- numeric(n_nodes)
+    calc_x <- function(nd) {
+        ch_rows <- which(edge[, 1] == nd)
+        for (r_idx in ch_rows) {
+            child_nd <- edge[r_idx, 2]
+            depth_from_root[child_nd] <<- depth_from_root[nd] + (2 * edge_len[r_idx])
+            if (child_nd > n_tips) calc_x(child_nd)
+        }
+    }
+    calc_x(root_node)
+
+    total_depth <- max(depth_from_root)
+    x_pos <- total_depth - depth_from_root
+
+    # Y coordinate: hc_order[1] at top (n_tips), hc_order[n_tips] at bottom (1)
+    y_pos <- numeric(n_nodes)
+    y_pos[hc_order] <- rev(seq_len(n_tips))
+
+    calc_y <- function(nd) {
+        if (nd <= n_tips) return(y_pos[nd])
+        ch <- edge[edge[, 1] == nd, 2]
+        ch_ys <- vapply(ch, calc_y, numeric(1))
+        y_pos[nd] <<- mean(ch_ys)
+        y_pos[nd]
+    }
+    calc_y(root_node)
+
+    horiz_df <- tibble::tibble(
+        x = x_pos[edge[, 1]],
+        xend = x_pos[edge[, 2]],
+        y = y_pos[edge[, 2]],
+        yend = y_pos[edge[, 2]]
+    )
+
+    vert_df <- purrr::map_dfr(unique(edge[, 1]), function(parent_nd) {
+        ch <- edge[edge[, 1] == parent_nd, 2]
+        tibble::tibble(
+            x = x_pos[parent_nd],
+            xend = x_pos[parent_nd],
+            y = min(y_pos[ch]),
+            yend = max(y_pos[ch])
+        )
+    })
+
+    tips_df <- tibble::tibble(
+        x = x_pos[seq_len(n_tips)],
+        y = y_pos[seq_len(n_tips)],
+        label = phylo_obj$tip.label,
+        col = tip_cols
+    )
+
+    boot_threshold <- 70L
+    boot_df <- if (length(boot_support) == phylo_obj$Nnode) {
+        int_nodes <- (n_tips + 1L):n_nodes
+        tibble::tibble(
+            x = x_pos[int_nodes],
+            y = y_pos[int_nodes],
+            sup = boot_support
+        ) |>
+            dplyr::filter(!is.na(sup), sup >= boot_threshold) |>
+            dplyr::mutate(txt = sprintf("%d", sup))
+    } else {
+        tibble::tibble(x = numeric(0), y = numeric(0), txt = character(0))
+    }
+
+    max_lbl_len <- max(nchar(tips_df$label), na.rm = TRUE)
+    # Since x-axis is reversed (max_depth on left -> 0 at tips -> negative values to the right for labels):
+    x_right_pad <- -max(max_depth * (0.18 + max_lbl_len * 0.015), 0.08)
+
+    p <- ggplot2::ggplot() +
+        ggplot2::geom_segment(
+            data = vert_df,
+            ggplot2::aes(x = x, xend = xend, y = y, yend = yend),
+            color = "#9aa0a6",
+            linewidth = 0.7
+        ) +
+        ggplot2::geom_segment(
+            data = horiz_df,
+            ggplot2::aes(x = x, xend = xend, y = y, yend = yend),
+            color = "#9aa0a6",
+            linewidth = 0.7
+        ) +
+        ggplot2::geom_text(
+            data = tips_df,
+            ggplot2::aes(x = x, y = y, label = label, color = I(col)),
+            hjust = -0.02,
+            vjust = 0.35,
+            size = 3.1
+        )
+
+    if (nrow(boot_df) > 0) {
+        p <- p + ggplot2::geom_text(
+            data = boot_df,
+            ggplot2::aes(x = x, y = y, label = txt),
+            hjust = 1.15,
+            vjust = -0.25,
+            size = 2.6,
+            color = "#2da44e"
+        )
+    }
+
+    if (is.finite(max_depth) && max_depth >= 0.05) {
+        p <- p + ggplot2::geom_vline(
+            xintercept = 0.05,
+            linetype = "dashed",
+            color = "#cf222e",
+            linewidth = 0.75
+        )
+    }
+
+    x_left_bound <- total_depth * 1.06
+    x_breaks <- pretty(c(0, total_depth))
+    x_breaks <- x_breaks[x_breaks >= 0 & x_breaks <= x_left_bound]
+
+    p +
+        ggplot2::scale_x_reverse(breaks = x_breaks, expand = c(0, 0)) +
+        ggplot2::coord_cartesian(
+            xlim = c(x_left_bound, x_right_pad),
+            ylim = c(0.5, n_tips + 0.5),
+            clip = "on"
+        ) +
+        ggplot2::labs(
+            title = NULL,
+            x = "Genetic Distance (p-distance)",
+            y = NULL
+        ) +
+        ggplot2::theme_minimal(base_size = 11) +
+        ggplot2::theme(
+            axis.text.y = ggplot2::element_blank(),
+            axis.ticks.y = ggplot2::element_blank(),
+            panel.grid.major.y = ggplot2::element_blank(),
+            panel.grid.minor = ggplot2::element_blank(),
+            axis.text.x = ggplot2::element_text(color = "#57606a"),
+            axis.title.x = ggplot2::element_text(color = "#57606a"),
+            plot.margin = ggplot2::margin(t = 14, r = 18, b = 12, l = 14),
+            panel.background = ggplot2::element_rect(fill = "#ffffff", color = NA),
+            plot.background = ggplot2::element_rect(fill = "#ffffff", color = NA)
+        )
+}
+
+dendro_ui_list <- list()
+n_boot_reps <- 100L
+
+for (f in fasta_files) {
+    if (!file.exists(f)) next
+    dna <- read.dna(f, format = "fasta")
+
+    if (nrow(dna) < 2) {
+        dendro_ui_list <- append(dendro_ui_list, list(
+            htmltools::tags$p(
+                style = "color: var(--tbl-text); font-style: italic;",
+                sprintf("Not enough sequences in %s to draw a dendrogram.", basename(f))
+            )
+        ))
+        next
+    }
+
+    d_raw_dist <- dist.dna(dna, model = "raw", as.matrix = FALSE, pairwise.deletion = TRUE)
+    if (any(is.na(d_raw_dist))) {
+        max_d <- max(d_raw_dist, na.rm = TRUE)
+        d_raw_dist[is.na(d_raw_dist)] <- if (is.infinite(max_d)) 1 else max_d
+    }
+
+    hc <- hclust(d_raw_dist, method = "average")
+    motu_clusters <- cutree(hc, h = 0.05)
+    boot_support <- compute_bootstrap_support(dna, hc, n_boot = n_boot_reps, seed = 42L)
+
+    hc_plot <- hc
+    hc_plot$labels <- sprintf("%s [%s-%s]", hc$labels, date_str, motu_clusters[hc$labels])
+
+    phylo_obj <- ape::as.phylo(hc_plot)
+    n_tips <- length(phylo_obj$tip.label)
+    fig_h <- max(5, min(24, n_tips * 0.28 + 1.8))
+
+    n_motus <- length(unique(motu_clusters))
+    motu_pal <- carto_pal(max(3, min(12, n_motus)), "Bold")
+    tip_cols <- motu_pal[(motu_clusters[hc$labels] - 1) %% length(motu_pal) + 1]
+    max_depth <- max(ape::node.depth.edgelength(phylo_obj))
+
+    title_txt <- sprintf(
+        "UPGMA Dendrogram (Uncorrected p-distance, MOTU cutoff h = 0.05, %d bootstraps)%s",
+        n_boot_reps,
+        if (length(fasta_files) > 1) paste0(" - ", basename(f)) else ""
+    )
+
+    gg_tree <- build_phylo_ggplot(phylo_obj, hc$order, tip_cols, boot_support, max_depth, n_tips)
+
+    png_file <- tempfile(fileext = ".png")
+    grDevices::png(
+        png_file,
+        width = 2400,
+        height = max(800L, as.integer(round(fig_h * 180))),
+        res = 220,
+        bg = "white"
+    )
+    tryCatch(print(gg_tree), finally = grDevices::dev.off())
+    img_uri <- base64enc::dataURI(file = png_file, mime = "image/png")
+    unlink(png_file)
+
+    dendro_card <- htmltools::div(
+        style = "width: 100%; overflow-x: auto; padding: 18px 20px; background-color: var(--tbl-bg); border: 1px solid var(--tbl-border); border-radius: 6px; margin-top: 12px;",
+        htmltools::tags$h4(
+            style = "margin: 0 0 12px 0; font-size: 15px; font-weight: 700; color: var(--tbl-accent);",
+            title_txt
+        ),
+        htmltools::div(
+            style = "padding: 10px; background-color: #ffffff; border: 1px solid var(--tbl-border); border-radius: 4px;",
+            htmltools::tags$img(
+                src = img_uri,
+                style = "width: 100%; max-width: 1400px; height: auto; display: block; margin: 0 auto;"
+            )
+        ),
+        htmltools::div(
+            style = "margin-top: 10px; font-size: 12px; color: var(--tbl-text); opacity: 0.85;",
+            sprintf(
+                "Tip colors correspond to assigned MOTU clusters (h = 0.05 average-linkage UPGMA clustering on uncorrected p-distance; red dashed line indicates the 5%% divergence threshold from tips when within tree depth). Internal node values show branch support across %d site-resampling bootstrap replicates. Supports under 70 are not shown.",
+                n_boot_reps
+            )
+        )
+    )
+
+    dendro_ui_list <- append(dendro_ui_list, list(dendro_card))
+}
+
+htmltools::tagList(dendro_ui_list)
+```
+
+```{=html}
+<style>
+.matrix-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+</style>
+<script>
+function toggleMatrixGroup(selectId, classPrefix) {
+  var selected = document.getElementById(selectId).value;
+  var allMatrices = document.getElementsByClassName(classPrefix);
+  for (var i = 0; i < allMatrices.length; i++) {
+    allMatrices[i].style.display = "none";
+  }
+  var active = document.getElementsByClassName(classPrefix + "-" + selected);
+  for (var i = 0; i < active.length; i++) {
+    active[i].style.display = "block";
   }
 }
+</script>
 ```
 
 :::
+

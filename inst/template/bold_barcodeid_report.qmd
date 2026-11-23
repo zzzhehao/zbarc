@@ -7,7 +7,6 @@ format:
       dark: darkly
     page-layout: custom
     toc: false
-    embed-resources: true
 execute:
   echo: false
   warning: false
@@ -26,3 +25,4 @@ bold_files <- params$input
 
 {{< include _bold_data.qmd >}}
 {{< include _bold_ui.qmd >}}
+{{< include _footer.qmd >}}

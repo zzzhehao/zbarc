@@ -1,0 +1,42 @@
+<!-- footer -->
+
+```{r}
+#| echo: false
+#| output: false
+pkg_ver <- tryCatch(as.character(utils::packageVersion("zbarc")), error = function(e) "dev")
+pkg_desc <- tryCatch(utils::packageDescription("zbarc"), error = function(e) list())
+repo_url <- if (!is.null(pkg_desc$URL) && !is.na(pkg_desc$URL)) {
+  # Extract first http(s) URL if multiple entries exist in DESCRIPTION
+  urls <- unlist(strsplit(pkg_desc$URL, "[,\\s]+"))
+  gh <- urls[grepl("^https?://github\\.com/", urls)]
+  if (length(gh) > 0) gh[1] else urls[1]
+} else {
+  "https://github.com/<owner>/zbarc"
+}
+```
+
+```{r}
+#| echo: false
+htmltools::tags$footer(
+  style = paste(
+    "margin-top: 36px; padding: 14px 18px;",
+    "border-top: 1px solid var(--tbl-border);",
+    "font-size: 12px; color: var(--tbl-text); opacity: 0.85;",
+    "display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px;"
+  ),
+  htmltools::div(
+    "Generated with ",
+    htmltools::strong("zbarc"),
+    sprintf(" (v%s)", pkg_ver)
+  ),
+  htmltools::div(
+    htmltools::tags$a(
+      href = repo_url,
+      target = "_blank",
+      rel = "noopener noreferrer",
+      style = "color: var(--tbl-accent); text-decoration: none; font-weight: 500;",
+      "GitHub Repository"
+    )
+  )
+)
+```

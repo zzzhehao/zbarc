@@ -1,4 +1,6 @@
 
+{{< include _hit_quality_indicator.qmd >}}
+
 ```{r}
 #| echo: false
 #| output: false
@@ -9,109 +11,114 @@ library(htmltools)
 
 # 1. Function to parse a BOLD JSONL file into a flat dataframe
 parse_bold_file <- function(file_path) {
-  # Read file line by line (JSONL format)
-  lines <- readLines(file_path, warn = FALSE)
-  lines <- lines[trimws(lines) != ""] # Remove empty lines
+    # Read file line by line (JSONL format)
+    lines <- readLines(file_path, warn = FALSE)
+    lines <- lines[trimws(lines) != ""] # Remove empty lines
   
-  map_dfr(lines, function(line) {
-    record <- fromJSON(line, simplifyVector = FALSE)
-    q_id <- record$seqid
-    
-    # Check if this query returned any hits
-    if (length(record$results) == 0) {
-      return(tibble(
-        query_id = q_id,
-        hit_id = NA_character_,
-        bitscore = NA_real_,
-        evalue = NA_real_,
-        pident = NA_real_,
-        qcovhsp = NA_real_,
-        overlap = NA_integer_,
-        mismatch = NA_integer_,
-        gaps = NA_integer_,
-        top_id = "No Hit",
-        taxonomy = "None"
-      ))
-    }
-    
-    # Iterate over all hits for the query
-    hits_list <- record$results
-    map_dfr(names(hits_list), function(h_name) {
-      h <- hits_list[[h_name]]
-      tax <- h$taxonomy
-      
-      # Determine best Identification name (Species -> Genus -> Family)
-      top_id <- "Unknown"
-      if (!is.null(tax$species) && tax$species != "") {
-        top_id <- tax$species
-      } else if (!is.null(tax$genus) && tax$genus != "") {
-        top_id <- tax$genus
-      } else if (!is.null(tax$family) && tax$family != "") {
-        top_id <- tax$family
-      }
-      
-      # Build a full taxonomic lineage string
-      tax_vec <- c(tax$phylum, tax$class, tax$order, tax$family, tax$genus, tax$species)
-      tax_vec <- tax_vec[!is.null(tax_vec) & tax_vec != ""]
-      tax_str <- if (length(tax_vec) > 0) paste(tax_vec, collapse = " > ") else "Unknown"
-      
-      tibble(
-        query_id = q_id,
-        hit_id = h_name,
-        bitscore = as.numeric(h$bitscore),
-        evalue = as.numeric(h$evalue),
-        pident = as.numeric(h$pident),
-        qcovhsp = as.numeric(h$qcovhsp),
-        overlap = as.integer(h$overlap),
-        mismatch = as.integer(h$mismatch),
-        gaps = as.integer(h$gaps),
-        top_id = top_id,
-        taxonomy = tax_str
-      )
+    map_dfr(lines, function(line) {
+        record <- fromJSON(line, simplifyVector = FALSE)
+        q_id <- record$seqid
+        
+        # Check if this query returned any hits
+        if (length(record$results) == 0) {
+            return(tibble(
+                query_id = q_id,
+                hit_id = NA_character_,
+                bitscore = NA_real_,
+                evalue = NA_real_,
+                pident = NA_real_,
+                qcovhsp = NA_real_,
+                overlap = NA_integer_,
+                mismatch = NA_integer_,
+                gaps = NA_integer_,
+                top_id = "No Hit",
+                taxonomy = "None"
+            ))
+        }
+        
+        # Iterate over all hits for the query
+        hits_list <- record$results
+        map_dfr(names(hits_list), function(h_name) {
+            h <- hits_list[[h_name]]
+            tax <- h$taxonomy
+            
+            # Determine best Identification name (Species -> Genus -> Family)
+            top_id <- "Unknown"
+            if (!is.null(tax$species) && tax$species != "") {
+                top_id <- tax$species
+            } else if (!is.null(tax$genus) && tax$genus != "") {
+                top_id <- tax$genus
+            } else if (!is.null(tax$family) && tax$family != "") {
+                top_id <- tax$family
+            }
+            
+            # Build a full taxonomic lineage string
+            tax_vec <- c(tax$phylum, tax$class, tax$order, tax$family, tax$genus, tax$species)
+            tax_vec <- tax_vec[!is.null(tax_vec) & tax_vec != ""]
+            tax_str <- if (length(tax_vec) > 0) paste(tax_vec, collapse = " > ") else "Unknown"
+            
+            tibble(
+                query_id = q_id,
+                hit_id = h_name,
+                bitscore = as.numeric(h$bitscore),
+                evalue = as.numeric(h$evalue),
+                pident = as.numeric(h$pident),
+                qcovhsp = as.numeric(h$qcovhsp),
+                overlap = as.integer(h$overlap),
+                mismatch = as.integer(h$mismatch),
+                gaps = as.integer(h$gaps),
+                top_id = top_id,
+                taxonomy = tax_str
+            )
+        })
     })
-  })
 }
 
 # 2. Load and combine data from all input files
 bold_hits <- map_dfr(bold_files, function(f) {
-  if (file.exists(f)) {
-    parse_bold_file(f) %>% mutate(source_file = basename(f))
-  } else {
-    warning(paste("File not found:", f))
-    tibble()
-  }
+    if (file.exists(f)) {
+        parse_bold_file(f) %>% mutate(source_file = basename(f))
+    } else {
+        warning(paste("File not found:", f))
+        tibble()
+    }
 })
 
-if(nrow(bold_hits) == 0) {
-  stop("No valid BOLD results found in the provided JSONL files.")
+if (nrow(bold_hits) == 0) {
+    stop("No valid BOLD results found in the provided JSONL files.")
 }
+
+bold_hits <- dplyr::bind_cols(
+    bold_hits,
+    evaluate_hit_quality_df(bold_hits$pident, bold_hits$qcovhsp)
+)
 
 # 3. Create Main Summary Table (Level 1) - Top Hit per Query
 summary_bold_df <- bold_hits %>%
-  group_by(query_id) %>%
-  arrange(evalue, desc(bitscore)) %>%
-  slice(1) %>%
-  ungroup() %>%
-  arrange(query_id) %>% 
-  select(query_id, top_id, hit_id, pident, qcovhsp, evalue, bitscore)
+    group_by(query_id) %>%
+    arrange(evalue, desc(bitscore)) %>%
+    slice(1) %>%
+    ungroup() %>%
+    arrange(query_id) %>%
+    select(query_id, top_id, hit_id, pident, qcovhsp, evalue, bitscore, qc_symbol, qc_sym_class, qc_row_class, qc_reason)
 
 
 # Dynamic theme connecting reactable to our custom CSS variables
 dynamic_theme <- reactableTheme(
-  color = "var(--tbl-text)",
-  backgroundColor = "var(--tbl-bg)",
-  borderColor = "var(--tbl-border)",
-  stripedColor = "var(--tbl-stripe)",
-  highlightColor = "var(--tbl-highlight)",
-  cellPadding = "8px 12px"
+    color = "var(--tbl-text)",
+    backgroundColor = "var(--tbl-bg)",
+    borderColor = "var(--tbl-border)",
+    stripedColor = "var(--tbl-stripe)",
+    highlightColor = "var(--tbl-highlight)",
+    cellPadding = "8px 12px"
 )
 
 # Helper function to generate BOLD URL links
 generate_bold_link <- function(value) {
-  if(is.na(value)) return("-")
-  # Extract the Process ID (everything before the first '|')
-  proc_id <- sub("\\|.*", "", value)
-  # Return the formatted HTML link with stopPropagation
-  sprintf('<a href="https://portal.boldsystems.org/record/%s" target="_blank" class="bold-link" onclick="event.stopPropagation();" style="color: var(--tbl-accent); text-decoration: none; font-weight: 500;">%s</a>', proc_id, value)
+    if(is.na(value)) return("-")
+    # Extract the Process ID (everything before the first '|')
+    proc_id <- sub("\\|.*", "", value)
+    # Return the formatted HTML link with stopPropagation
+    sprintf('<a href="https://portal.boldsystems.org/record/%s" target="_blank" class="bold-link" onclick="event.stopPropagation();" style="color: var(--tbl-accent); text-decoration: none; font-weight: 500;">%s</a>', proc_id, value)
 }
 ```

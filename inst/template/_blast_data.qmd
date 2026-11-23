@@ -1,3 +1,5 @@
+{{< include _hit_quality_indicator.qmd >}}
+
 ```{r setup_and_parse}
 #| echo: false
 #| output: false
@@ -7,44 +9,44 @@ library(reactable)
 library(htmltools)
 
 # 1. Function to parse a single JSON file into a flat dataframe
-parse_blast_file <- function(file_path) {
-  js <- fromJSON(file_path, simplifyVector = FALSE)
-  if(is.null(js$BlastOutput2)) return(tibble())
-  
-  map_dfr(js$BlastOutput2, function(b) {
-    search <- b$report$results$search
-    q_id <- search$query_id
-    q_title <- search$query_title
-    q_len <- search$query_len
-    
-    if (length(search$hits) == 0) return(tibble()) 
-    
-    map_dfr(search$hits, function(hit) {
-      desc <- hit$description[[1]]
-      map_dfr(hit$hsps, function(hsp) {
-        tibble(
-          query_title = q_title, query_id = q_id, query_len = q_len,
-          hit_num = hit$num, hit_acc = desc$accession,
-          hit_title = desc$title, sciname = desc$sciname,
-          hsp_num = hsp$num, bit_score = hsp$bit_score, score = hsp$score,
-          evalue = hsp$evalue, identity = hsp$identity, align_len = hsp$align_len,
-          q_from = hsp$query_from, q_to = hsp$query_to, h_from = hsp$hit_from, h_to = hsp$hit_to,
-          q_strand = hsp$query_strand, h_strand = hsp$hit_strand, gaps = hsp$gaps,
-          qseq = hsp$qseq, hseq = hsp$hseq, midline = hsp$midline
-        )
-      })
-    })
-  })
-}
+    parse_blast_file <- function(file_path) {
+        js <- fromJSON(file_path, simplifyVector = FALSE)
+        if(is.null(js$BlastOutput2)) return(tibble())
+        
+        map_dfr(js$BlastOutput2, function(b) {
+            search <- b$report$results$search
+            q_id <- search$query_id
+            q_title <- search$query_title
+            q_len <- search$query_len
+            
+            if (length(search$hits) == 0) return(tibble()) 
+            
+            map_dfr(search$hits, function(hit) {
+                desc <- hit$description[[1]]
+                map_dfr(hit$hsps, function(hsp) {
+                    tibble(
+                        query_title = q_title, query_id = q_id, query_len = q_len,
+                        hit_num = hit$num, hit_acc = desc$accession,
+                        hit_title = desc$title, sciname = desc$sciname,
+                        hsp_num = hsp$num, bit_score = hsp$bit_score, score = hsp$score,
+                        evalue = hsp$evalue, identity = hsp$identity, align_len = hsp$align_len,
+                        q_from = hsp$query_from, q_to = hsp$query_to, h_from = hsp$hit_from, h_to = hsp$hit_to,
+                        q_strand = hsp$query_strand, h_strand = hsp$hit_strand, gaps = hsp$gaps,
+                        qseq = hsp$qseq, hseq = hsp$hseq, midline = hsp$midline
+                    )
+                })
+            })
+        })
+    }
 
 # 2. Load and combine data, and calculate custom display columns
 blast_hits <- map_dfr(blast_files, function(f) {
-  if (file.exists(f)) {
-    parse_blast_file(f) %>% mutate(source_file = basename(f))
-  } else {
-    warning(paste("File not found:", f))
-    tibble()
-  }
+    if (file.exists(f)) {
+        parse_blast_file(f) %>% mutate(source_file = basename(f))
+    } else {
+        warning(paste("File not found:", f))
+        tibble()
+    }
 })
 
 if(nrow(blast_hits) == 0) {
@@ -52,27 +54,63 @@ if(nrow(blast_hits) == 0) {
 }
 
 blast_hits <- blast_hits %>%
-  mutate(
-    cov_pct = (abs(q_to - q_from) + 1) / query_len * 100,
-    cov_display = sprintf("%.0f%%", cov_pct),
-    ident_pct = (identity / align_len) * 100,
-    ident_display = sprintf("%.1f%% (%d/%d)", ident_pct, identity, align_len)
-  )
+    dplyr::mutate(
+        q_len_num = suppressWarnings(as.numeric(query_len)),
+        aln_len_num = suppressWarnings(as.numeric(align_len)),
+        ident_num = suppressWarnings(as.numeric(identity)),
+        q_from_num = suppressWarnings(as.numeric(q_from)),
+        q_to_num = suppressWarnings(as.numeric(q_to)),
+        cov_pct = ifelse(
+            !is.na(q_len_num) & q_len_num > 0 & !is.na(q_from_num) & !is.na(q_to_num),
+            (abs(q_to_num - q_from_num) + 1) / q_len_num * 100,
+            NA_real_
+        ),
+        cov_display = ifelse(is.na(cov_pct), "-", sprintf("%.0f%%", cov_pct)),
+        ident_pct = ifelse(
+            !is.na(aln_len_num) & aln_len_num > 0 & !is.na(ident_num),
+            (ident_num / aln_len_num) * 100,
+            NA_real_
+        ),
+        ident_display = ifelse(
+            is.na(ident_pct),
+            "-",
+            sprintf("%.1f%% (%d/%d)", ident_pct, as.integer(ident_num), as.integer(aln_len_num))
+        )
+    )
+
+id_vec <- if ("ident_pct" %in% names(blast_hits)) blast_hits$ident_pct else rep(NA_real_, nrow(blast_hits))
+cv_vec <- if ("cov_pct" %in% names(blast_hits)) blast_hits$cov_pct else rep(NA_real_, nrow(blast_hits))
+
+qc_blast <- evaluate_hit_quality_df(id_vec, cv_vec)
+blast_hits <- dplyr::bind_cols(blast_hits, qc_blast)
 
 # 3. Create Main Summary Table
 summary_blast_df <- blast_hits %>%
-  group_by(query_title) %>%
-  arrange(evalue, desc(bit_score)) %>%
-  slice(1) %>%
-  ungroup() %>%
-  select(query_title, hit_acc, sciname, bit_score, evalue, ident_display, cov_display, align_len)
+    group_by(query_title) %>%
+    arrange(evalue, desc(bit_score)) %>%
+    slice(1) %>%
+    ungroup() %>%
+    select(
+        query_title, hit_acc, sciname, bit_score, evalue,
+        ident_display, cov_display, ident_pct, cov_pct, align_len,
+        qc_symbol, qc_sym_class, qc_row_class, qc_reason
+    ) %>%
+    mutate(qc_status = qc_symbol)
+
+blast_l1_order <- c(
+    "query_title", "hit_acc", "sciname", "qc_status",
+    "ident_display", "cov_display", "align_len", "evalue", "bit_score",
+    "qc_symbol", "qc_sym_class", "qc_row_class", "qc_reason"
+)
+summary_blast_df_ordered <- summary_blast_df[, blast_l1_order, drop = FALSE]
 
 # Dynamic theme connecting reactable to our custom One Dark Pro CSS variables
 dynamic_theme <- reactableTheme(
-  color = "var(--tbl-text)",
-  backgroundColor = "var(--tbl-bg)",
-  borderColor = "var(--tbl-border)",
-  stripedColor = "var(--tbl-stripe)",
-  highlightColor = "var(--tbl-highlight)",
-  cellPadding = "8px 12px"
+    color = "var(--tbl-text)",
+    backgroundColor = "var(--tbl-bg)",
+    borderColor = "var(--tbl-border)",
+    stripedColor = "var(--tbl-stripe)",
+    highlightColor = "var(--tbl-highlight)",
+    cellPadding = "8px 12px"
 )
+```

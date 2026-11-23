@@ -1,4 +1,3 @@
-
 ```{=html}
 <style>
   /* Maximize width with minimal margins */
@@ -63,103 +62,158 @@ library(jsonlite)
 library(tidyverse)
 library(reactable)
 library(htmltools)
+
+summary_blast_df_ordered$qc_status <- ""
+
+# if (!"ident_pct" %in% names(summary_blast_df_ordered) && "ident_display" %in% names(summary_blast_df_ordered)) {
+#   summary_blast_df_ordered$ident_pct <- suppressWarnings(
+#     as.numeric(gsub("[^0-9eE.+-]", "", as.character(summary_blast_df_ordered$ident_display)))
+#   )
+# }
+# if (!"cov_pct" %in% names(summary_blast_df_ordered) && "cov_display" %in% names(summary_blast_df_ordered)) {
+#   summary_blast_df_ordered$cov_pct <- suppressWarnings(
+#     as.numeric(gsub("[^0-9eE.+-]", "", as.character(summary_blast_df_ordered$cov_display)))
+#   )
+# }
 ```
 
 
 ```{r}
 # Render Level 1: Best hit per query
+summary_blast_df_ordered$qc_status <- summary_blast_df_ordered$qc_symbol
+
+# Render Level 1: Best hit per query
 reactable(
-  summary_blast_df,
-  theme = dynamic_theme,
-  highlight = TRUE,
-  compact = TRUE,
-  defaultPageSize = 100, 
-  onClick = "expand",
-  style = list(fontSize = "13px"), 
-  columns = list(
-    query_title = colDef(name = "Query Seq", minWidth = 250),
-    hit_acc = colDef(name = "Hit Accession"),
-    sciname = colDef(name = "Organism", minWidth = 250),
-    bit_score = colDef(name = "Bit Score", format = colFormat(digits = 1)),
-    evalue = colDef(name = "E-value", cell = function(value) sprintf("%.2e", value)),
-    ident_display = colDef(name = "Identity"),
-    cov_display = colDef(name = "Coverage"),
-    align_len = colDef(name = "Align Len")
-  ),
-  details = function(index) {
-    current_query <- summary_blast_df$query_title[index]
-    
-    sub_df <- blast_hits %>% 
-      filter(query_title == current_query) %>%
-      select(hit_num, hit_acc, sciname, hit_title, bit_score, evalue, ident_display, cov_display, align_len, gaps)
-    
-    htmltools::div(
-      style = "padding: 16px; background-color: transparent; border-left: 4px solid var(--tbl-accent);",
-      htmltools::h5(paste("All Hits for Query:", current_query), style="margin-top:0; color: var(--tbl-text);"),
-      
-      reactable(
-        sub_df,
-        theme = dynamic_theme,
-        highlight = TRUE,
-        compact = TRUE,
-        style = list(fontSize = "13px"), 
-        onClick = "expand",
-        columns = list(
-          hit_num = colDef(name = "#", width = 50),
-          hit_acc = colDef(name = "Accession", width = 120),
-          sciname = colDef(name = "Organism", minWidth = 200),
-          hit_title = colDef(name = "Description", minWidth = 300),
-          bit_score = colDef(name = "Bit Score", format = colFormat(digits = 1)),
-          evalue = colDef(name = "E-value", cell = function(value) sprintf("%.2e", value)),
-          ident_display = colDef(name = "Identity", minWidth = 130),
-          cov_display = colDef(name = "Coverage", width = 85),
-          align_len = colDef(name = "Length", width = 75),
-          gaps = colDef(name = "Gaps", width = 70)
+    summary_blast_df_ordered,
+    class = "qc-tinted-table",
+    rowClass = qc_row_class_fn(summary_blast_df_ordered),
+    theme = dynamic_theme,
+    highlight = TRUE,
+    compact = TRUE,
+    defaultPageSize = 50, 
+    onClick = "expand",
+    style = list(fontSize = "13px"), 
+    columns = list(
+        query_title = colDef(name = "Query Seq", minWidth = 250),
+        hit_acc = colDef(name = "Hit Accession"),
+        sciname = colDef(name = "Organism", minWidth = 250),
+        qc_status = colDef(
+            name = "",
+            width = 34,
+            minWidth = 34,
+            maxWidth = 34,
+            align = "center",
+            sortable = FALSE,
+            cell = render_qc_badge_cell(summary_blast_df_ordered)
         ),
-        details = function(sub_index) {
-          hsp_data <- blast_hits %>% 
-            filter(query_title == current_query, hit_acc == sub_df$hit_acc[sub_index]) %>%
-            slice(1)
-          
-          # Alignment block utilizing specific One Dark Pro colors
-          htmltools::div(
-            style = "padding: 20px; background-color: #21252b; color: #abb2bf; border: 1px solid #181a1f; border-radius: 6px; margin: 10px 0;",
-            
-            htmltools::div(
-              style = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; font-family: monospace; font-size: 14px; color: #56b6c2;",
-              htmltools::div(htmltools::strong("Score: "), paste(round(hsp_data$bit_score, 1), "bits (", hsp_data$score, ")")),
-              htmltools::div(htmltools::strong("Expect: "), sprintf("%.2e", hsp_data$evalue)),
-              htmltools::div(htmltools::strong("Identities: "), hsp_data$ident_display),
-              htmltools::div(htmltools::strong("Gaps: "), paste0(hsp_data$gaps, "/", hsp_data$align_len, " (", round((hsp_data$gaps/hsp_data$align_len)*100), "%)")),
-              htmltools::div(htmltools::strong("Strand: "), paste0(hsp_data$q_strand, "/", hsp_data$h_strand)),
-              htmltools::div(htmltools::strong("Query Cover: "), hsp_data$cov_display)
-            ),
-            
-            htmltools::div(
-              style = "overflow-x: auto; white-space: pre; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; padding-bottom: 15px;",
-              
-              htmltools::div(
-                htmltools::span("Query  ", style = "color: #c678dd; font-weight: bold;"), 
-                htmltools::span(sprintf("%-6s", hsp_data$q_from), style="color: #5c6370;"), 
-                htmltools::span(hsp_data$qseq, style = "color: #abb2bf;"), 
-                htmltools::span(sprintf(" %s", hsp_data$q_to), style="color: #5c6370;")
-              ),
-              htmltools::div(
-                htmltools::span("       ", style = "color: transparent;"), 
-                htmltools::span(sprintf("%-6s", ""), style="color: transparent;"), 
-                htmltools::span(hsp_data$midline, style = "color: #98c379;") 
-              ),
-              htmltools::div(
-                htmltools::span("Sbjct  ", style = "color: #61afef; font-weight: bold;"), 
-                htmltools::span(sprintf("%-6s", hsp_data$h_from), style="color: #5c6370;"), 
-                htmltools::span(hsp_data$hseq, style = "color: #abb2bf;"), 
-                htmltools::span(sprintf(" %s", hsp_data$h_to), style="color: #5c6370;")
-              )
+        ident_display = colDef(name = "Identity"),
+        cov_display = colDef(name = "Coverage"),
+        align_len = colDef(name = "Align Len"),
+        evalue = colDef(name = "E-value", cell = function(value) sprintf("%.2e", value)),
+        bit_score = colDef(name = "Bit Score", format = colFormat(digits = 1)),
+        qc_symbol = colDef(show = FALSE),
+        qc_sym_class = colDef(show = FALSE),
+        qc_row_class = colDef(show = FALSE),
+        qc_reason = colDef(show = FALSE)
+    ),
+    details = function(index) {
+        current_query <- summary_blast_df_ordered$query_title[index]
+        
+        sub_df <- blast_hits %>%
+            filter(query_title == current_query) %>%
+            arrange(evalue, desc(bit_score)) %>%
+            slice_head(n = 10) %>%
+            mutate(qc_status = qc_symbol) %>%
+            select(
+                hit_num, hit_acc, sciname, hit_title, qc_status,
+                ident_display, cov_display, 
+                # ident_pct, cov_pct, 
+                align_len, evalue, gaps, bit_score,
+                qc_symbol, qc_sym_class, qc_row_class, qc_reason
             )
-          )
-        }
-      )
-    )
-  }
+
+        htmltools::div(
+            style = "padding: 16px; background-color: transparent; border-left: 4px solid var(--tbl-accent);",
+            htmltools::h5(paste("All Hits for Query:", current_query), style="margin-top:0; color: var(--tbl-text);"),
+            
+            reactable(
+                sub_df,
+                class = "qc-tinted-table",
+                rowClass = qc_row_class_fn(sub_df),
+                theme = dynamic_theme,
+                highlight = TRUE,
+                compact = TRUE,
+                style = list(fontSize = "13px"), 
+                onClick = "expand",
+                columns = list(
+                    hit_num = colDef(name = "#", width = 50),
+                    hit_acc = colDef(name = "Accession", width = 120),
+                    sciname = colDef(name = "Organism", minWidth = 200),
+                    hit_title = colDef(name = "Description", minWidth = 300),
+                    qc_status = colDef(
+                        name = "",
+                        width = 34,
+                        minWidth = 34,
+                        maxWidth = 34,
+                        align = "center",
+                        sortable = FALSE,
+                        cell = render_qc_badge_cell(sub_df)
+                    ),
+                    ident_display = colDef(name = "Identity", minWidth = 130),
+                    cov_display = colDef(name = "Coverage", width = 85),
+                    align_len = colDef(name = "Length", width = 75),
+                    evalue = colDef(name = "E-value", cell = function(value) sprintf("%.2e", value)),
+                    gaps = colDef(name = "Gaps", width = 70),
+                    bit_score = colDef(name = "Bit Score", format = colFormat(digits = 1)),
+                    qc_symbol = colDef(show = FALSE),
+                    qc_sym_class = colDef(show = FALSE),
+                    qc_row_class = colDef(show = FALSE),
+                    qc_reason = colDef(show = FALSE)
+                ),
+                details = function(sub_index) {
+                    hsp_data <- blast_hits %>% 
+                        filter(query_title == current_query, hit_acc == sub_df$hit_acc[sub_index]) %>%
+                        slice(1)
+                
+                    # Alignment block utilizing specific One Dark Pro colors
+                    htmltools::div(
+                        style = "padding: 20px; background-color: #21252b; color: #abb2bf; border: 1px solid #181a1f; border-radius: 6px; margin: 10px 0;",
+                        
+                        htmltools::div(
+                            style = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; font-family: monospace; font-size: 14px; color: #56b6c2;",
+                            htmltools::div(htmltools::strong("Score: "), paste(round(hsp_data$bit_score, 1), "bits (", hsp_data$score, ")")),
+                            htmltools::div(htmltools::strong("Expect: "), sprintf("%.2e", hsp_data$evalue)),
+                            htmltools::div(htmltools::strong("Identities: "), hsp_data$ident_display),
+                            htmltools::div(htmltools::strong("Gaps: "), paste0(hsp_data$gaps, "/", hsp_data$align_len, " (", round((hsp_data$gaps/hsp_data$align_len)*100), "%)")),
+                            htmltools::div(htmltools::strong("Strand: "), paste0(hsp_data$q_strand, "/", hsp_data$h_strand)),
+                            htmltools::div(htmltools::strong("Query Cover: "), hsp_data$cov_display)
+                        ),
+                        
+                        htmltools::div(
+                            style = "overflow-x: auto; white-space: pre; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; padding-bottom: 15px;",
+                            
+                            htmltools::div(
+                                htmltools::span("Query  ", style = "color: #c678dd; font-weight: bold;"), 
+                                htmltools::span(sprintf("%-6s", hsp_data$q_from), style="color: #5c6370;"), 
+                                htmltools::span(hsp_data$qseq, style = "color: #abb2bf;"), 
+                                htmltools::span(sprintf(" %s", hsp_data$q_to), style="color: #5c6370;")
+                            ),
+                            htmltools::div(
+                                htmltools::span("       ", style = "color: transparent;"), 
+                                htmltools::span(sprintf("%-6s", ""), style="color: transparent;"), 
+                                htmltools::span(hsp_data$midline, style = "color: #98c379;") 
+                            ),
+                            htmltools::div(
+                                htmltools::span("Sbjct  ", style = "color: #61afef; font-weight: bold;"), 
+                                htmltools::span(sprintf("%-6s", hsp_data$h_from), style="color: #5c6370;"), 
+                                htmltools::span(hsp_data$hseq, style = "color: #abb2bf;"), 
+                                htmltools::span(sprintf(" %s", hsp_data$h_to), style="color: #5c6370;")
+                            )
+                        )
+                    )
+                }
+            )
+        )
+    }
 )
 ```

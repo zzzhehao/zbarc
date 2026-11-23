@@ -7,7 +7,6 @@ format:
       dark: darkly
     page-layout: custom
     toc: false
-    embed-resources: true
 execute:
   echo: false
   warning: false
@@ -22,7 +21,9 @@ params:
 ```{r}
 #| output: false
 distance_files <- params$input
+fasta_files <- params$input
 ```
 
 {{< include _distance_data.qmd >}}
 {{< include _distance_ui.qmd >}}
+{{< include _footer.qmd >}}

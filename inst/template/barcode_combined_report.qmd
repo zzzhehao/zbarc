@@ -7,7 +7,6 @@ format:
       dark: darkly
     page-layout: custom
     toc: false
-    embed-resources: true
 execute:
   echo: false
   warning: false
@@ -24,6 +23,8 @@ params:
   metadata_path: 
     value: ""
   key_col: 
+    value: ""
+  extra_reports_path:
     value: ""
 ---
 
@@ -91,6 +92,25 @@ params:
     color: var(--tbl-text);
     margin-bottom: 10px;
   }
+  #overview-table .rt-tr-group:hover .rt-tr,
+  #overview-table .rt-tr:hover > .rt-td {
+    background-color: var(--tbl-highlight) !important;
+  }
+
+  .rt-filter,
+  input.rt-filter {
+    background-color: var(--tbl-bg) !important;
+    color: var(--tbl-text) !important;
+    border: 1px solid var(--tbl-border) !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+  }
+
+  .rt-filter:focus,
+  input.rt-filter:focus {
+    outline: none !important;
+    border-color: var(--tbl-accent) !important;
+  }
 </style>
 ```
 
@@ -135,4 +155,28 @@ dynamic_theme <- reactable::reactableTheme(
 
 {{< include _distance_ui.qmd >}}
 
+```{r extra_reports_load}
+#| echo: false
+extra_reports_list <- list()
+if (!is.null(params$extra_reports_path) && nzchar(params$extra_reports_path) && file.exists(params$extra_reports_path)) {
+    extra_reports_list <- readRDS(params$extra_reports_path)
+}
+```
+
+```{r}
+#| echo: false
+#| results: asis
+if (length(extra_reports_list) > 0) {
+    for (idx in seq_along(extra_reports_list)) {
+        rep_obj <- extra_reports_list[[idx]]
+        cat(sprintf("\n## %s\n\n", rep_obj@title))
+        widget <- rep_obj@render_fn(rep_obj@data, dynamic_theme)
+        print(htmltools::tagList(widget))
+        cat("\n")
+    }
+}
+```
+
 :::
+
+{{< include _footer.qmd >}}

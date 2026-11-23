@@ -1,46 +1,432 @@
-```{r}
+```{r overview_ui}
 #| echo: false
-#| message: false
+library(tidyverse)
+library(reactable)
+library(htmltools)
 
 # Safely extract base sequences from whichever data successfully loaded
-all_seqs <- c()
-if (exists("motu_df")) all_seqs <- c(all_seqs, motu_df$query_id)
-if (exists("summary_bold_df")) all_seqs <- c(all_seqs, summary_bold_df$query_id)
-if (exists("summary_blast_df")) all_seqs <- c(all_seqs, summary_blast_df$query_title)
+all_seqs <- character()
+if (exists("motu_df") && nrow(motu_df) > 0) all_seqs <- c(all_seqs, motu_df$query_id)
+if (exists("summary_bold_df") && nrow(summary_bold_df) > 0) all_seqs <- c(all_seqs, summary_bold_df$query_id)
+if (exists("summary_blast_df") && nrow(summary_blast_df) > 0) all_seqs <- c(all_seqs, summary_blast_df$query_title)
 
-overview_df <- data.frame(query_id = unique(all_seqs))
+overview_df <- tibble(query_id = unique(all_seqs))
 
 # Merge BOLD top hits if available
-if (exists("summary_bold_df")) {
+if (exists("summary_bold_df") && nrow(summary_bold_df) > 0) {
   overview_df <- dplyr::left_join(
-    overview_df, 
-    summary_bold_df %>% dplyr::select(query_id, BOLD_ID = top_id, BOLD_Hit = hit_id), 
+    overview_df,
+    summary_bold_df %>%
+      dplyr::select(
+        query_id,
+        BOLD_QC = qc_symbol,
+        BOLD_QC_Class = qc_sym_class,
+        BOLD_QC_Reason = qc_reason,
+        BOLD_ID = top_id,
+        BOLD_Hit = hit_id
+      ),
     by = "query_id"
   )
 }
 
-# Merge Distance MOTUs if available
-if (exists("motu_df")) {
-  overview_df <- dplyr::left_join(overview_df, motu_df, by = "query_id")
+# Merge Distance MOTUs as a factor for exact-match MOTU filtering
+if (exists("motu_df") && nrow(motu_df) > 0) {
+  motu_clean <- motu_df %>%
+    dplyr::distinct(query_id, .keep_all = TRUE) %>%
+    dplyr::mutate(motu = factor(motu))
+  overview_df <- dplyr::left_join(overview_df, motu_clean, by = "query_id")
 }
 
-# Merge User Metadata if provided
-if (!is.null(params$metadata_path) && params$metadata_path != "" && params$key_col != "") {
+# Merge additional S7 report overview columns if provided
+if (exists("extra_reports_list") && length(extra_reports_list) > 0) {
+  for (rep_obj in extra_reports_list) {
+    key_col <- rep_obj@col_key
+    ov_cols <- rep_obj@col_overview
+    if (!is.null(key_col) && nzchar(key_col) && length(ov_cols) > 0) {
+      valid_cols <- intersect(ov_cols, names(rep_obj@data))
+      if (length(valid_cols) > 0 && key_col %in% names(rep_obj@data)) {
+        sub_ov <- rep_obj@data %>%
+          dplyr::select(dplyr::all_of(c(key_col, valid_cols))) %>%
+          dplyr::rename(query_id = dplyr::all_of(key_col)) %>%
+          dplyr::distinct(query_id, .keep_all = TRUE)
+        overview_df <- dplyr::left_join(overview_df, sub_ov, by = "query_id")
+      }
+    }
+  }
+}
+
+# Merge User Metadata if provided (preserving numeric vs factor vs character types)
+if (!is.null(params$metadata_path) && nzchar(params$metadata_path) &&
+    !is.null(params$key_col) && nzchar(params$key_col)) {
   user_meta <- readRDS(params$metadata_path)
-  user_meta <- user_meta %>% dplyr::rename(query_id = !!dplyr::sym(params$key_col))
-  overview_df <- dplyr::left_join(overview_df, user_meta, by = "query_id")
+  if (params$key_col %in% names(user_meta)) {
+    user_meta <- user_meta %>%
+      dplyr::rename(query_id = dplyr::all_of(params$key_col)) %>%
+      dplyr::distinct(query_id, .keep_all = TRUE)
+    overview_df <- dplyr::left_join(overview_df, user_meta, by = "query_id")
+  }
 }
 
-reactable::reactable(
-  overview_df,
-  theme = dynamic_theme,
-  highlight = TRUE,
-  compact = TRUE,
-  filterable = TRUE,
-  columns = list(
-    query_id = reactable::colDef(name = "Sequence Name", minWidth = 150, sticky = "left"),
-    BOLD_ID = reactable::colDef(name = "BOLD Result", minWidth = 150),
-    motu = reactable::colDef(name = "MOTU Cluster", minWidth = 100)
+# Helper to link MOTU cluster to Intra-MOTU Genetic Distance section
+generate_motu_link <- function(value) {
+  val_chr <- as.character(value)
+  if (is.na(val_chr) || !nzchar(val_chr)) return("-")
+  anchor_id <- paste0("motu-", gsub("[^A-Za-z0-9_-]", "-", val_chr))
+  sprintf(
+    '<a href="#%s" class="bold-link motu-jump-link" data-motu-anchor="%s" onclick="event.stopPropagation(); jumpToMotu(\'%s\');" style="color: var(--tbl-accent); text-decoration: none; font-weight: 600;">%s</a>',
+    anchor_id, anchor_id, anchor_id, htmlEscape(val_chr)
   )
+}
+
+# Range filter for numeric columns
+numeric_range_filter_method <- JS("
+  function(rows, columnId, filterValue) {
+    if (!filterValue || String(filterValue).trim() === '') return rows;
+    var raw = String(filterValue).trim();
+    var minVal = -Infinity;
+    var maxVal = Infinity;
+
+    var rangeMatch = raw.match(/^(-?\\d*\\.?\\d+)\\s*(?:-|\\.\\.|to|,)\\s*(-?\\d*\\.?\\d+)$/i);
+    if (rangeMatch) {
+      minVal = parseFloat(rangeMatch[1]);
+      maxVal = parseFloat(rangeMatch[2]);
+    } else if (/^>=\\s*(-?\\d*\\.?\\d+)$/.test(raw)) { minVal = parseFloat(raw.replace(/^>=\\s*/, '')); } else if (/^<=\\s*(-?\\d*\\.?\\d+)$/.test(raw)) {
+      maxVal = parseFloat(raw.replace(/^<=\\s*/, ''));
+    } else if (/^>\\s*(-?\\d*\\.?\\d+)$/.test(raw)) { var gt = parseFloat(raw.replace(/^>\\s*/, '')); return rows.filter(function(r) { var v = Number(r.values[columnId]); return !isNaN(v) && v > gt; }); } else if (/^<\\s*(-?\\d*\\.?\\d+)$/.test(raw)) {
+      var lt = parseFloat(raw.replace(/^<\\s*/, ''));
+      return rows.filter(function(r) {
+        var v = Number(r.values[columnId]);
+        return !isNaN(v) && v < lt;
+      });
+    } else if (!isNaN(parseFloat(raw))) {
+      return rows.filter(function(r) {
+        var v = Number(r.values[columnId]);
+        return !isNaN(v) && String(v).indexOf(raw) !== -1;
+      });
+    } else {
+      return rows;
+    }
+
+    return rows.filter(function(r) {
+      var v = r.values[columnId];
+      if (v === null || v === undefined || v === '') return false;
+      var num = Number(v);
+      return !isNaN(num) && num >= minVal && num <= maxVal;
+    });
+  }
+")
+
+numeric_range_filter_input <- JS("
+  function(column, state) {
+    return React.createElement('input', {
+      type: 'text',
+      value: column.filterValue || '',
+      placeholder: 'min - max',
+      title: 'Filter range (e.g. 10 - 25, >= 15, <= 50)',
+      onChange: function(e) { column.setFilter(e.target.value || undefined); },
+      style: {
+        width: '100%',
+        padding: '4px 6px',
+        backgroundColor: 'var(--tbl-bg)',
+        color: 'var(--tbl-text)',
+        border: '1px solid var(--tbl-border)',
+        borderRadius: '4px',
+        fontSize: '12px'
+      }
+    });
+  }
+")
+
+# Exact-match multi-value filter for factor columns (comma-separated tokens)
+factor_exact_filter_method <- JS("
+  function(rows, columnId, filterValue) {
+    if (!filterValue || String(filterValue).trim() === '') return rows;
+    var targets = String(filterValue)
+      .split(',')
+      .map(function(s) { return s.trim(); })
+      .filter(function(s) { return s.length > 0; });
+    if (targets.length === 0) return rows;
+
+    return rows.filter(function(r) {
+      var v = r.values[columnId];
+      if (v === null || v === undefined) return false;
+      return targets.indexOf(String(v)) !== -1;
+    });
+  }
+")
+
+# Factor filter input: text input (comma-separated) + dropdown picker that toggles/adds levels
+make_factor_filter_input <- function(col_name, col_vec) {
+  lvls <- if (is.factor(col_vec)) {
+    unique(c(levels(col_vec), as.character(col_vec)))
+  } else {
+    as.character(col_vec)
+  }
+  lvls <- sort(unique(lvls[!is.na(lvls) & nzchar(lvls)]))
+  escaped_lvls <- gsub("'", "\\\\'", lvls)
+
+  opts_js <- paste0(
+    "React.createElement('option', { value: '' }, '+ Add level...'), ",
+    paste0("React.createElement('option', { value: '", escaped_lvls, "' }, '", escaped_lvls, "')", collapse = ", ")
+  )
+
+  JS(paste0(
+    "function(column, state) {\n",
+    "  var currentVal = column.filterValue || '';\n",
+    "  var addLevel = function(lvl) {\n",
+    "    if (!lvl) return;\n",
+    "    var parts = currentVal ? currentVal.split(',').map(function(x) { return x.trim(); }).filter(Boolean) : [];\n",
+    "    var idx = parts.indexOf(lvl);\n",
+    "    if (idx === -1) { parts.push(lvl); } else { parts.splice(idx, 1); }\n",
+    "    column.setFilter(parts.length > 0 ? parts.join(', ') : undefined);\n",
+    "  };\n",
+    "  return React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '3px', width: '100%' } },\n",
+    "    React.createElement('input', {\n",
+    "      type: 'text',\n",
+    "      value: currentVal,\n",
+    "      placeholder: 'val1, val2 (exact)',\n",
+    "      title: 'Exact match; separate multiple values with commas (e.g. A, B)',\n",
+    "      onChange: function(e) { column.setFilter(e.target.value || undefined); },\n",
+    "      style: {\n",
+    "        width: '100%',\n",
+    "        padding: '3px 6px',\n",
+    "        backgroundColor: 'var(--tbl-bg)',\n",
+    "        color: 'var(--tbl-text)',\n",
+    "        border: '1px solid var(--tbl-border)',\n",
+    "        borderRadius: '4px',\n",
+    "        fontSize: '11px'\n",
+    "      }\n",
+    "    }),\n",
+    "    React.createElement('select', {\n",
+    "      value: '',\n",
+    "      onChange: function(e) { addLevel(e.target.value); e.target.value = ''; },\n",
+    "      style: {\n",
+    "        width: '100%',\n",
+    "        padding: '2px 4px',\n",
+    "        backgroundColor: 'var(--tbl-bg)',\n",
+    "        color: 'var(--tbl-text)',\n",
+    "        border: '1px solid var(--tbl-border)',\n",
+    "        borderRadius: '4px',\n",
+    "        fontSize: '11px'\n",
+    "      }\n",
+    "    }, ", opts_js, ")\n",
+    "  );\n",
+    "}"
+  ))
+}
+
+# Pure character string filter (substring match)
+character_text_filter_input <- JS("
+  function(column, state) {
+    return React.createElement('input', {
+      type: 'text',
+      value: column.filterValue || '',
+      placeholder: 'Contains text...',
+      onChange: function(e) { column.setFilter(e.target.value || undefined); },
+      style: {
+        width: '100%',
+        padding: '4px 6px',
+        backgroundColor: 'var(--tbl-bg)',
+        color: 'var(--tbl-text)',
+        border: '1px solid var(--tbl-border)',
+        borderRadius: '4px',
+        fontSize: '12px'
+      }
+    });
+  }
+")
+
+# Build column definitions dynamically based on R types
+overview_col_defs <- list()
+
+for (cname in names(overview_df)) {
+  col_vec <- overview_df[[cname]]
+
+  if (cname == "query_id") {
+    overview_df[[cname]] <- as.character(col_vec)
+    overview_col_defs[[cname]] <- colDef(
+      name = "Sequence Name",
+      minWidth = 180,
+      sticky = "left",
+      style = list(fontWeight = 600),
+      filterInput = character_text_filter_input
+    )
+  } else if (cname == "BOLD_ID") {
+    overview_df[[cname]] <- as.character(col_vec)
+    overview_col_defs[[cname]] <- colDef(
+      name = "BOLD Result",
+      minWidth = 180,
+      filterInput = character_text_filter_input,
+      cell = function(value) {
+        if (is.na(value) || !nzchar(value)) return("-")
+        if (value == "No Hit") {
+          htmltools::span(style = "color: #e06c75; font-style: italic;", value)
+        } else {
+          htmltools::span(style = "font-weight: 600;", value)
+        }
+      }
+    )
+  } else if (cname == "BOLD_Hit" && exists("generate_bold_link")) {
+    overview_df[[cname]] <- as.character(col_vec)
+    overview_col_defs[[cname]] <- colDef(
+      name = "BOLD Hit",
+      minWidth = 240,
+      html = TRUE,
+      cell = generate_bold_link,
+      filterInput = character_text_filter_input
+    )
+  } else if (cname == "motu") {
+    if (!is.factor(col_vec)) overview_df[[cname]] <- factor(col_vec)
+    overview_col_defs[[cname]] <- colDef(
+      name = "MOTU Cluster",
+      minWidth = 150,
+      html = TRUE,
+      cell = generate_motu_link,
+      filterMethod = factor_exact_filter_method,
+      filterInput = make_factor_filter_input(cname, overview_df[[cname]])
+    )
+  } else if (is.numeric(col_vec)) {
+    overview_col_defs[[cname]] <- colDef(
+      minWidth = 120,
+      align = "right",
+      filterMethod = numeric_range_filter_method,
+      filterInput = numeric_range_filter_input,
+      cell = function(value) {
+        if (is.na(value) || is.nan(value)) "-" else format(value, trim = TRUE, scientific = FALSE)
+      }
+    )
+  } else if (is.factor(col_vec)) {
+    overview_col_defs[[cname]] <- colDef(
+        minWidth = 150,
+        filterMethod = factor_exact_filter_method,
+        filterInput = make_factor_filter_input(cname, col_vec),
+        cell = function(value) {
+            val_chr <- as.character(value)
+            if (is.na(val_chr) || !nzchar(val_chr)) "-" else val_chr
+        }
+    )
+    } else if (cname == "BOLD_QC") {
+        overview_df[[cname]] <- as.character(col_vec)
+        overview_col_defs[[cname]] <- colDef(
+            name = "",
+            width = 28,
+            minWidth = 28,
+            maxWidth = 28,
+            align = "center",
+            sortable = FALSE,
+            filterable = FALSE,
+            style = list(padding = "4px 2px", backgroundColor = "transparent"),
+            cell = function(value, index) {
+                sym <- if (is.na(value) || !nzchar(value)) "-" else value
+                cls <- if ("BOLD_QC_Class" %in% names(overview_df)) overview_df$BOLD_QC_Class[index] else ""
+                rsn <- if ("BOLD_QC_Reason" %in% names(overview_df)) overview_df$BOLD_QC_Reason[index] else ""
+                htmltools::tags$span(
+                    class = trimws(paste("qc-badge qc-symbol", cls)),
+                    `data-reason` = if (is.na(rsn)) "" else rsn,
+                    sym
+                )
+            }
+        )
+    } else if (cname %in% c("BOLD_QC_Class", "BOLD_QC_Reason")) {
+        overview_col_defs[[cname]] <- colDef(show = FALSE)
+    } else if (is.numeric(col_vec)) {
+    # Character or other non-factor/non-numeric -> pure character string filter
+        overview_df[[cname]] <- as.character(col_vec)
+        overview_col_defs[[cname]] <- colDef(
+            minWidth = 140,
+            filterInput = character_text_filter_input,
+            cell = function(value) {
+                    if (is.na(value) || !nzchar(value)) "-" else value
+            }
+        )
+    }
+}
+
+htmltools::div(
+    style = "display: flex; justify-content: flex-end; margin-bottom: 8px;",
+    htmltools::tags$button(
+        type = "button",
+        onclick = "resetOverviewTable()",
+        style = paste(
+        "padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;",
+        "border-radius: 4px; border: 1px solid var(--tbl-border);",
+        "background-color: var(--tbl-stripe); color: var(--tbl-text);"
+        ),
+        "Reset Filters & Sort"
+    )
+)
+
+overview_cols_json <- jsonlite::toJSON(names(overview_df), auto_unbox = FALSE)
+
+reactable(
+    overview_df,
+    elementId = "overview-table",
+    theme = dynamic_theme,
+    highlight = TRUE,
+    striped = FALSE,
+    sortable = TRUE,
+    compact = TRUE,
+    filterable = TRUE,
+    defaultPageSize = 50,
+    style = list(fontSize = "13px"),
+    columns = overview_col_defs
 )
 ```
+
+```{=html}
+<script>
+function jumpToMotu(anchorId) {
+  document.querySelectorAll('.nav-link, [role="tab"]').forEach(function(el) {
+    if (el.textContent && el.textContent.trim() === "Genetic Distance") {
+      el.click();
+    }
+  });
+  setTimeout(function() {
+    document.querySelectorAll('.nav-link, [role="tab"]').forEach(function(el) {
+      if (el.textContent && el.textContent.trim() === "Intra-MOTU Genetic Distance") {
+        el.click();
+      }
+    });
+    var target = document.getElementById(anchorId);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, 80);
+}
+window.__overviewAllCols = `r overview_cols_json`;
+
+function resetOverviewTable() {
+  if (!window.Reactable) return;
+  var tblId = "overview-table";
+  var colIds = Array.isArray(window.__overviewAllCols) ? window.__overviewAllCols : [];
+
+  if (typeof Reactable.setAllFilters === "function") {
+    Reactable.setAllFilters(tblId, []);
+  }
+  colIds.forEach(function(cid) {
+    try {
+      if (typeof Reactable.setFilter === "function") {
+        Reactable.setFilter(tblId, cid, undefined);
+      }
+    } catch (e) {}
+  });
+
+  try {
+    if (typeof Reactable.setSort === "function") {
+      Reactable.setSort(tblId, []);
+    }
+  } catch (e) {}
+
+  var tableEl = document.getElementById(tblId);
+  if (tableEl) {
+    tableEl.querySelectorAll("input").forEach(function(inp) {
+      inp.value = "";
+    });
+    tableEl.querySelectorAll("select").forEach(function(sel) {
+      sel.selectedIndex = 0;
+    });
+  }
+}
+</script>
+```
+

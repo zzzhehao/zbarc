@@ -1,0 +1,240 @@
+```{=html}
+<style>
+  .qc-symbol {
+    display: inline-block;
+    font-size: inherit;
+    line-height: 1;
+    font-weight: 700;
+    cursor: help;
+    user-select: none;
+  }
+  .qc-symbol-green  { color: #2da44e; }
+  .qc-symbol-yellow { color: #d4a72c; }
+  .qc-symbol-orange { color: #e08216; }
+  .qc-symbol-red    { color: #cf222e; }
+
+  html[data-bs-theme="dark"] .qc-symbol-green,
+  body[data-bs-theme="dark"] .qc-symbol-green,
+  body.quarto-dark .qc-symbol-green { color: #98c379; }
+
+  html[data-bs-theme="dark"] .qc-symbol-yellow,
+  body[data-bs-theme="dark"] .qc-symbol-yellow,
+  body.quarto-dark .qc-symbol-yellow { color: #e5c07b; }
+
+  html[data-bs-theme="dark"] .qc-symbol-orange,
+  body[data-bs-theme="dark"] .qc-symbol-orange,
+  body.quarto-dark .qc-symbol-orange { color: #d19a66; }
+
+  html[data-bs-theme="dark"] .qc-symbol-red,
+  body[data-bs-theme="dark"] .qc-symbol-red,
+  body.quarto-dark .qc-symbol-red { color: #e06c75; }
+
+  /* Row tints in BLAST / BOLD detail tabs (scoped via .qc-tinted-table) */
+  .qc-tinted-table .rt-tr.qc-row-orange,
+  .qc-tinted-table .rt-tr.qc-row-orange > .rt-td {
+    background-color: rgba(224, 130, 22, 0.14) !important;
+  }
+  .qc-tinted-table .rt-tr.qc-row-red,
+  .qc-tinted-table .rt-tr.qc-row-red > .rt-td {
+    background-color: rgba(164, 14, 38, 0.18) !important;
+  }
+
+  html[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-orange,
+  body[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-orange,
+  body.quarto-dark .qc-tinted-table .rt-tr.qc-row-orange,
+  html[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-orange > .rt-td,
+  body[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-orange > .rt-td,
+  body.quarto-dark .qc-tinted-table .rt-tr.qc-row-orange > .rt-td {
+    background-color: rgba(209, 154, 102, 0.16) !important;
+  }
+
+  html[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-red,
+  body[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-red,
+  body.quarto-dark .qc-tinted-table .rt-tr.qc-row-red,
+  html[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-red > .rt-td,
+  body[data-bs-theme="dark"] .qc-tinted-table .rt-tr.qc-row-red > .rt-td,
+  body.quarto-dark .qc-tinted-table .rt-tr.qc-row-red > .rt-td {
+    background-color: rgba(190, 50, 65, 0.22) !important;
+  }
+
+  /* Instant hover tooltip */
+  .qc-instant-tooltip {
+    position: fixed;
+    z-index: 99999;
+    display: none;
+    max-width: 340px;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    line-height: 1.35;
+    pointer-events: none;
+    background-color: #1f2328;
+    color: #f0f6fc;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28);
+  }
+</style>
+
+<script>
+(function() {
+  function ensureQcTooltipEl() {
+    var tip = document.getElementById("qc-instant-tooltip");
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.id = "qc-instant-tooltip";
+      tip.className = "qc-instant-tooltip";
+      document.body.appendChild(tip);
+    }
+    return tip;
+  }
+
+  function positionQcTooltip(tip, clientX, clientY) {
+    var pad = 12;
+    var rect = tip.getBoundingClientRect();
+    var left = clientX + pad;
+    var top = clientY + pad;
+    if (left + rect.width > window.innerWidth - 8) {
+      left = Math.max(8, clientX - rect.width - pad);
+    }
+    if (top + rect.height > window.innerHeight - 8) {
+      top = Math.max(8, clientY - rect.height - pad);
+    }
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+
+  document.addEventListener("mouseover", function(e) {
+    var badge = e.target && e.target.closest ? e.target.closest(".qc-badge") : null;
+    if (!badge) return;
+    var reason = badge.getAttribute("data-reason");
+    if (!reason) return;
+    var tip = ensureQcTooltipEl();
+    tip.textContent = reason;
+    tip.style.display = "block";
+    positionQcTooltip(tip, e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mousemove", function(e) {
+    var badge = e.target && e.target.closest ? e.target.closest(".qc-badge") : null;
+    var tip = document.getElementById("qc-instant-tooltip");
+    if (!tip || tip.style.display !== "block") return;
+    if (!badge) {
+      tip.style.display = "none";
+      return;
+    }
+    positionQcTooltip(tip, e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mouseout", function(e) {
+    var badge = e.target && e.target.closest ? e.target.closest(".qc-badge") : null;
+    if (!badge) return;
+    var toEl = e.relatedTarget;
+    if (!toEl || !badge.contains(toEl)) {
+      var tip = document.getElementById("qc-instant-tooltip");
+      if (tip) tip.style.display = "none";
+    }
+  });
+})();
+</script>
+```
+
+```{r}
+#| echo: false
+#| output: false
+evaluate_hit_quality_df <- function(
+  ident_pct,
+  cov_pct,
+  score_high = 0.8836,
+  score_mid = 0.80,
+  score_low = 0.71,
+  cov_min = 80
+) {
+  n <- length(ident_pct)
+  ident <- suppressWarnings(as.numeric(ident_pct))
+  cov <- suppressWarnings(as.numeric(cov_pct))
+
+  symbol <- rep("-", n)
+  sym_class <- rep("", n)
+  row_class <- rep("", n)
+  reason <- rep("No numeric identity or coverage available.", n)
+
+  valid <- !is.na(ident) & !is.na(cov)
+  if (!any(valid)) {
+    return(tibble::tibble(
+      qc_symbol = symbol,
+      qc_sym_class = sym_class,
+      qc_row_class = row_class,
+      qc_reason = reason
+    ))
+  }
+
+  id_norm <- ident / 100
+  cov_norm <- cov / 100
+  score <- id_norm * cov_norm
+  metrics_note <- sprintf(" (Identity: %.2f%%, Coverage: %.1f%%)", ident, cov)
+
+  # 1. Coverage < 80% (regardless of identity) OR normalized score < 0.71 -> red cross
+  is_red <- valid & (cov < cov_min | score < score_low)
+  if (any(is_red)) {
+    symbol[is_red] <- "\u2716"
+    sym_class[is_red] <- "qc-symbol-red"
+    row_class[is_red] <- "qc-row-red"
+    reason[is_red] <- vapply(which(is_red), function(i) {
+      parts <- character()
+      if (cov[i] < cov_min) parts <- c(parts, sprintf("coverage is below %g%%", cov_min))
+      if (score[i] < score_low) parts <- c(parts, sprintf("combined score is below %.2f", score_low))
+      sprintf(
+        "Not reliable and unsafe to interpret (%s)%s.",
+        paste(parts, collapse = " and "),
+        metrics_note[i]
+      )
+    }, character(1))
+  }
+
+  # 2. Score >= 0.8836 (and coverage >= 80%) -> green check mark
+  is_green <- valid & !is_red & (score >= score_high)
+  symbol[is_green] <- "\u2713"
+  sym_class[is_green] <- "qc-symbol-green"
+  reason[is_green] <- paste0("Prob. same species", metrics_note[is_green], ".")
+
+  # 3. 0.80 <= Score < 0.8836 (and coverage >= 80%) -> yellow check mark
+  is_yellow <- valid & !is_red & !is_green & (score >= score_mid)
+  symbol[is_yellow] <- "\u2713"
+  sym_class[is_yellow] <- "qc-symbol-yellow"
+  reason[is_yellow] <- paste0("Prob. similar species (same genus)", metrics_note[is_yellow], ".")
+
+  # 4. 0.71 <= Score < 0.80 (and coverage >= 80%) -> orange warning sign
+  is_orange <- valid & !is_red & !is_green & !is_yellow
+  symbol[is_orange] <- "\u26A0"
+  sym_class[is_orange] <- "qc-symbol-orange"
+  row_class[is_orange] <- "qc-row-orange"
+  reason[is_orange] <- paste0("A bit too far, interpret with caution", metrics_note[is_orange], ".")
+
+  tibble::tibble(
+    qc_symbol = symbol,
+    qc_sym_class = sym_class,
+    qc_row_class = row_class,
+    qc_reason = reason
+  )
+}
+
+render_qc_badge_cell <- function(df_ref) {
+  function(value, index, name) {
+    sym <- if ("qc_symbol" %in% names(df_ref)) df_ref$qc_symbol[index] else "-"
+    cls <- if ("qc_sym_class" %in% names(df_ref)) df_ref$qc_sym_class[index] else ""
+    rsn <- if ("qc_reason" %in% names(df_ref)) df_ref$qc_reason[index] else ""
+
+    htmltools::tags$span(
+      class = trimws(paste("qc-badge qc-symbol", cls)),
+      `data-reason` = rsn,
+      sym
+    )
+  }
+}
+
+qc_row_class_fn <- function(df_ref) {
+  function(index) {
+    if ("qc_row_class" %in% names(df_ref)) df_ref$qc_row_class[index] else ""
+  }
+}
+```
